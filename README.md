@@ -1,23 +1,56 @@
-This bot is based off of the following tutorials:
+# Spackbot
 
-* https://docs.github.com/en/free-pro-team@latest/developers/apps/setting-up-your-development-environment-to-create-a-github-app
-* https://docs.github.com/en/free-pro-team@latest/developers/apps/using-the-github-api-in-your-app
+This is a GitHub bot for the [Spack](https://github.com/spack/spack)
+project. It automates various workflow tasks and handles jobs like:
 
-Follow the instructions in that documentation to get started.
+* notifying maintainers about relevant pull requests
+* adding them as reviewers if they are collaborators in the
+  [Spack organization](https://github.com/spack)
+* automatically labeling pull requests based on the files they modify
 
-## Install
+This list could easily expand in the future.
 
-To run the code, make sure you have [Bundler](http://gembundler.com/) installed; then enter `bundle install` on the command line.
+This app was built using [aiohttp](https://github.com/aio-libs/aiohttp)
+and [gidgethub](https://github.com/brettcannon/gidgethub), based on
+@Mariatta's excellent
+[GitHub Bot Tutorial](https://github-bot-tutorial.readthedocs.io/en/latest/).
 
-## Set environment variables
+## How it works
 
-1. Create a `.env` file.
-2. Add your GitHub App's private key, app ID, and webhook secret to the `.env` file.
+Spackbot is a pretty typical GitHub bot. It runs in a container somewhere
+in the cloud. A
+[GitHub App](https://docs.github.com/en/developers/apps/about-apps) is
+registered with the Spack project, and the app tells Spackbot about
+events like pull requests being opened through
+[webhook payloads](https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads).
+The Spackbot process in the container looks at these payloads and reacts
+to them by calling commands through the
+[GitHub API](https://docs.github.com/en/rest).
 
-## Run the server
+See Octomachinery's guide for
+[responding to GitHub events](https://tutorial.octomachinery.dev/en/latest/octomachinery-for-github-apps.html)
+for a detailed description of how this app is structured.
 
-1. Run `ruby template_server.rb` or `ruby server.rb` on the command line.
-1. View the default Sinatra app at `localhost:3000`.
+## Required environment variables
+
+To deploy this, you'll need several environment variables set:
+
+* `GITHUB_PRIVATE_KEY`: private key created by the GitHub App
+* `GITHUB_APP_IDENTIFIER`: id of the App on GitHub
+* `GITHUB_WEBHOOK_SECRET`: secret for webhooks, created when you created the GitHub App
+
+In a development environment, you can put these in a `.env` file in the
+directory where you run the app. In production, they should be set as
+secrets in the deployment environment.
+
+## Running the application
+
+1. Get the root of this project in your `PYTHONPATH`
+2. Run this:
+
+   ```
+   python3 -m spackbot
+   ```
 
 ## License
 
