@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "spack-bot"
+version = "0.0.1"
+description = "Bot to automate tasks for the Spack project (https://github.com/spack/spack)"
+authors = [
+    "Adam Stewart <ajstewart426@gmail.com>",
+    "Todd Gamblin <tgamblin@llnl.gov>",
+]
+license = "Apache-2.0 OR MIT"
+
+[tool.black]
+line-length = 88
+target-version = ['py37', 'py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
