@@ -1,0 +1,20 @@
+name: Lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: setup python packages
+        run: |
+          pip3 install --upgrade black
+          pip3 install --upgrade flake8
+      - name: black
+        uses: psf/black@stable
+        with:
+          args: ". --check"
+      - name: flake8
+        run: flake8
