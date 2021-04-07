@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import logging
 import os
 import time
 
@@ -13,6 +14,7 @@ from dotenv import load_dotenv
 from gidgethub import routing, sansio
 from gidgethub import aiohttp as gh_aiohttp
 
+from . import pr_add_labels
 
 # take environment variables from .env file (if present)
 load_dotenv()
@@ -27,7 +29,7 @@ APP_IDENTIFIER = os.environ.get("GITHUB_APP_IDENTIFIER")
 REQUESTER = os.environ.get("GITHUB_APP_REQUESTER")
 
 
-router = routing.Router()
+router = routing.Router(pr_add_labels.router)
 routes = web.RouteTableDef()
 
 
@@ -123,7 +125,7 @@ async def main(request):
         gh = gh_aiohttp.GitHubAPI(session, REQUESTER, oauth_token=token)
 
         # call the appropriate callback for the event
-        await router.dispatch(event, gh)
+        await router.dispatch(event, gh, session=session)
 
     # return a "Success"
     return web.Response(status=200)
