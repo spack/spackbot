@@ -14,10 +14,12 @@ from dotenv import load_dotenv
 from gidgethub import routing, sansio
 from gidgethub import aiohttp as gh_aiohttp
 
-from . import pr_add_labels
+from . import pr_add_labels, pr_add_reviewers
 
 # take environment variables from .env file (if present)
 load_dotenv()
+
+logging.basicConfig(level=logging.DEBUG)
 
 #: Location for authenticatd app to get a token for one of its installations
 INSTALLATION_TOKEN_URL = "app/installations/{installation_id}/access_tokens"
@@ -29,7 +31,7 @@ APP_IDENTIFIER = os.environ.get("GITHUB_APP_IDENTIFIER")
 REQUESTER = os.environ.get("GITHUB_APP_REQUESTER")
 
 
-router = routing.Router(pr_add_labels.router)
+router = routing.Router(pr_add_labels.router, pr_add_reviewers.router)
 routes = web.RouteTableDef()
 
 
