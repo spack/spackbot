@@ -18,10 +18,13 @@ router = routing.Router()
 #: Entries in the ``dict`` are of the form:
 #:
 #: ```python
-#: "label": {
-#:     "attr1": [r"regex1.1", r"regex1.2"],
-#:     "attr2": [r"regex2.1", r"regex2.2", r"regex2.3"],
-#:     "attr3": r"regex3.1",
+#: {
+#:     "label": {
+#:         "attr1": [r"regex1.1", r"regex1.2"],
+#:         "attr2": [r"regex2.1", r"regex2.2", r"regex2.3"],
+#:         "attr3": r"regex3.1",
+#:         ...
+#:     },
 #:     ...
 #: }
 #: ```
@@ -81,7 +84,7 @@ label_patterns = {
     },
     "commands": {
         "filename": r"^lib/spack/spack/cmd/[^/]+.py$",
-        "status": [r"^modified$", r"^modified$"],
+        "status": r"^modified$",
     },
     "compilers": {"filename": r"^lib/spack/spack/compiler"},
     "directives": {"filename": r"^lib/spack/spack/directives"},
@@ -91,7 +94,7 @@ label_patterns = {
     "modules": {"filename": r"^lib/spack/spack/modules"},
     "stage": {"filename": r"^lib/spack/spack/stage"},
     "tests": {"filename": r"^lib/spack/spack/test"},
-    "utilities": {"filename": r"^lib/spack/spack/util"},
+    "utilities": {"filename": [r"^lib/spack/spack/util", r"^lib/spack/llnl"]},
     "versions": {"filename": r"^lib/spack/spack/version"},
     #
     # Documentation
@@ -114,7 +117,7 @@ label_patterns = {
     "vendored-dependencies": {"filename": r"^lib/spack/external"},
     "sbang": {"filename": r"sbang"},
     "docker": {"filename": [r"[Dd]ockerfile$", r"^share/spack/docker"]},
-    "shell-support": {"filename": r"^share/spack/.*sh$"},
+    "shell-support": {"filename": r"^share/spack/.*\.(sh|csh|fish)$"},
 }
 
 
@@ -130,7 +133,7 @@ for label, pattern_dict in label_patterns.items():
 @router.register("pull_request", action="opened")
 @router.register("pull_request", action="synchronize")
 async def label_pull_requests(event, gh, *args, session, **kwargs):
-    """ Add labels to PRs based on which files were modified."""
+    """Add labels to PRs based on which files were modified."""
     pull_request = event.data["pull_request"]
     number = event.data["number"]
     logger.debug(f"Labeling PR #{number}...")
@@ -144,20 +147,20 @@ async def label_pull_requests(event, gh, *args, session, **kwargs):
         logger.debug(f"Filename: {filename}")
         logger.debug(f"Status: {status}")
 
-        # add our own "package" attribute to the file, if it's a package
+        # Add our own "package" attribute to the file, if it's a package
         match = re.match(
             r"var/spack/repos/builtin/packages/([^/]+)/package.py$", filename
         )
         file["package"] = match.group(1) if match else ""
 
-        # if the file's attributes match any patterns in label_patterns, add
+        # If the file's attributes match any patterns in label_patterns, add
         # the corresponding labels.
         for label, pattern_dict in label_patterns.items():
             attr_matches = []
-            # patterns matches for for each attribute are or'd together
+            # Pattern matches for for each attribute are or'd together
             for attr, patterns in pattern_dict.items():
                 attr_matches.append(any(p.search(file[attr]) for p in patterns))
-            # if all attributes have at least one pattern match, we add the label
+            # If all attributes have at least one pattern match, we add the label
             if all(attr_matches):
                 labels.append(label)
 

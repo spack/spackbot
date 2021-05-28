@@ -55,7 +55,6 @@ async def changed_packages(gh, pull_request):
         status = f["status"]
 
         if status == "removed":
-            #            print(f["patch"])
             continue
 
         match = re.match(package_path, filename)
@@ -230,6 +229,4 @@ async def on_pull_request(event, gh, session):
     repository = event.data["repository"]
     number = event.data["number"]
 
-    print()
-    print("ADDING REVIEWERS")
     await add_reviewers(gh, repository, pull_request, number)
