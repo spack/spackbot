@@ -19,7 +19,7 @@ from . import pr_add_labels, pr_add_reviewers
 # take environment variables from .env file (if present)
 load_dotenv()
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 #: Location for authenticatd app to get a token for one of its installations
 INSTALLATION_TOKEN_URL = "app/installations/{installation_id}/access_tokens"
