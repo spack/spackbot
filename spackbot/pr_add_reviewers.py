@@ -101,13 +101,13 @@ def find_maintainers(packages, repository, pull_request, number):
         from sh import spack
 
         for package in packages:
-            logger.debug(f"Package: {package}")
+            logger.info(f"Package: {package}")
 
             # Query maintainers
             pkg_maintainers = spack("maintainers", package, _ok_code=(0, 1)).split()
             pkg_maintainers = set(pkg_maintainers)
 
-            logger.debug("Maintainers: %s" % ", ".join(sorted(pkg_maintainers)))
+            logger.info("Maintainers: %s" % ", ".join(sorted(maintainers)))
 
             if not pkg_maintainers:
                 without_maintainers.append(package)
@@ -139,7 +139,7 @@ async def add_reviewers(gh, repository, pull_request, number):
 
     If a package does not have any maintainers yet, request them.
     """
-    logger.debug(f"Looking for reviewers for PR #{number}...")
+    logger.info(f"Looking for reviewers for PR #{number}...")
 
     packages = await changed_packages(gh, pull_request)
 
@@ -158,7 +158,7 @@ async def add_reviewers(gh, repository, pull_request, number):
         reviewers = []
         non_reviewers = []
         for user in maintainers:
-            logger.debug(f"User: {user}")
+            logger.info(f"User: {user}")
 
             collaborators_url = repository["collaborators_url"]
             if not await found(gh.getitem(collaborators_url, {"collaborator": user})):
@@ -170,13 +170,13 @@ async def add_reviewers(gh, repository, pull_request, number):
                 {"collaborator": user},
             )
             level = result["permission"]
-            logger.debug(f"Permission level: {level}")
+            logger.info(f"Permission level: {level}")
             reviewers.append(user)
 
         # If they have permission, add them
         # https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request
         if reviewers:
-            logger.debug(f"Requesting review from: {reviewers}")
+            logger.info(f"Requesting review from: {reviewers}")
 
             # There is a limit of 15 reviewers, so take the first 15
             await gh.post(
@@ -187,7 +187,7 @@ async def add_reviewers(gh, repository, pull_request, number):
 
         # If not, give them permission and comment
         if non_reviewers:
-            logger.debug(f"Adding collaborators: {non_reviewers}")
+            logger.info(f"Adding collaborators: {non_reviewers}")
 
             # We do not want to give users write permission here, as write
             # permission allows people to submit approving reviews for

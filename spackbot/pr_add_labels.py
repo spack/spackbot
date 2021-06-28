@@ -136,7 +136,7 @@ async def label_pull_requests(event, gh, *args, session, **kwargs):
     """Add labels to PRs based on which files were modified."""
     pull_request = event.data["pull_request"]
     number = event.data["number"]
-    logger.debug(f"Labeling PR #{number}...")
+    logger.info(f"Labeling PR #{number}...")
 
     # Iterate over modified files and create a list of labels
     # https://developer.github.com/v3/pulls/#list-pull-requests-files
@@ -144,8 +144,8 @@ async def label_pull_requests(event, gh, *args, session, **kwargs):
     async for file in gh.getiter(pull_request["url"] + "/files"):
         filename = file["filename"]
         status = file["status"]
-        logger.debug(f"Filename: {filename}")
-        logger.debug(f"Status: {status}")
+        logger.info(f"Filename: {filename}")
+        logger.info(f"Status: {status}")
 
         # Add our own "package" attribute to the file, if it's a package
         match = re.match(
@@ -164,7 +164,7 @@ async def label_pull_requests(event, gh, *args, session, **kwargs):
             if all(attr_matches):
                 labels.append(label)
 
-    logger.debug(f"Adding the following labels: {labels}")
+    logger.info(f"Adding the following labels: {labels}")
 
     # https://developer.github.com/v3/issues/labels/#add-labels-to-an-issue
     if labels:
