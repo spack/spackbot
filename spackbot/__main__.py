@@ -5,6 +5,7 @@
 
 import logging
 import os
+import re
 import time
 
 import aiohttp
@@ -112,8 +113,24 @@ async def authenticate_installation(payload):
     return await _tokens.get_token(installation_id, renew_installation_token)
 
 
+def fix_private_key():
+    """Fix some discrepancies between Docker's --env-file support and python dotenv.
+
+    Docker double-escapes \n's so they come through as \\n. It also preserves
+    quotes from the .env file, while dotenv does not.
+
+    """
+    global PRIVATE_KEY
+    if PRIVATE_KEY:
+        PRIVATE_KEY = re.sub(r"\\+", r"\\", PRIVATE_KEY)
+        PRIVATE_KEY = re.sub(r"\\n", r"\n", PRIVATE_KEY)
+        PRIVATE_KEY = PRIVATE_KEY.strip("'\"")
+
+
 @routes.post("/")
 async def main(request):
+    fix_private_key()
+
     # read the GitHub webhook payload
     body = await request.read()
 

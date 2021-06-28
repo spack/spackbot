@@ -1,4 +1,6 @@
-FROM python:3.9
+FROM python:3.7
+
+EXPOSE 8080
 
 COPY requirements.txt .
 COPY spackbot /app/spackbot
