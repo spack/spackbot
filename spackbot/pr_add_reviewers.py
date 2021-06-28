@@ -16,6 +16,8 @@ from gidgethub import routing
 logger = logging.getLogger(__name__)
 router = routing.Router()
 
+spack_develop_url = "https://github.com/spack/spack"
+
 package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 
 non_reviewers_comment = """\
@@ -77,24 +79,53 @@ def temp_dir():
             os.chdir(pwd)
 
 
-def find_maintainers(packages, repository, pull_request, number):
-    """Return an arrays of packages with maintainers, an array of packages
+async def parse_maintainers_from_patch(gh, pull_request):
+    """Get any new or removed maintainers from the patch data in the PR.
+
+    We parse this from the patch because running the spack from the PR as this
+    bot is unsafe; the bot is privileged and we do not trust code from PRs.
+
+    """
+    maintainers = {}
+    async for file in gh.getiter(pull_request["url"] + "/files"):
+        filename = file["filename"]
+        if not filename.endswith("package.py"):
+            continue
+
+        pkg = re.search(r"/([^/]+)/package.py", filename).group(1)
+
+        code = file["patch"]
+        arrays = re.findall("maintainers\s*=\s*\[[^\]]*\]", code)
+        for array in arrays:
+            file_maintainers = re.findall("['\"][^'\"]*['\"]", array)
+            for m in file_maintainers:
+                maintainers.setdefault(pkg, set()).add(m.strip("'\""))
+
+    return maintainers
+
+
+async def find_maintainers(gh, packages, repository, pull_request, number):
+    """Return an array of packages with maintainers, an array of packages
     without maintainers, and a set of maintainers.
 
     Ignore the author of the PR, as they don't need to review their own PR.
     """
     author = pull_request["user"]["login"]
-    clone_url = repository["clone_url"]
 
+    # lists of packages
     with_maintainers = []
     without_maintainers = []
-    maintainers = set()
 
+    # parse any added/removed maintainers from the PR. Do NOT run the spack from the PR
+    patch_maintainers = await parse_maintainers_from_patch(gh, pull_request)
+    logger.info(f"Maintainers from patch: {patch_maintainers}")
+
+    all_maintainers = set()
     with temp_dir() as cwd:
-        # Clone appropriate PR branch
-        git("clone", f"{clone_url}")
-        git("fetch", "origin", f"pull/{number}/head:PR{number}", _cwd="spack")
-        git("checkout", f"PR{number}", _cwd="spack")
+        # Clone spack develop (shallow clone for speed)
+        # WARNING: We CANNOT run spack from the PR, as it is untrusted code.
+        # WARNING: If we run that, an attacker could run anything as this bot.
+        git("clone", "--depth", "1", spack_develop_url)
 
         # Add `spack` to PATH
         os.environ["PATH"] = f"{cwd}/spack/bin:" + os.environ["PATH"]
@@ -103,25 +134,28 @@ def find_maintainers(packages, repository, pull_request, number):
         for package in packages:
             logger.info(f"Package: {package}")
 
-            # Query maintainers
-            pkg_maintainers = spack("maintainers", package, _ok_code=(0, 1)).split()
-            pkg_maintainers = set(pkg_maintainers)
+            # Query maintainers from develop
+            maintainers = spack("maintainers", package, _ok_code=(0, 1)).split()
+            maintainers = set(maintainers)
+
+            # add in maintainers from the PR patch
+            maintainers |= patch_maintainers.get(package, set())
 
             logger.info("Maintainers: %s" % ", ".join(sorted(maintainers)))
 
-            if not pkg_maintainers:
+            if not maintainers:
                 without_maintainers.append(package)
                 continue
 
             # No need to ask the author to review their own PR
-            if author in pkg_maintainers:
-                pkg_maintainers.remove(author)
+            if author in maintainers:
+                maintainers.remove(author)
 
-            if pkg_maintainers:
+            if maintainers:
                 with_maintainers.append(package)
-                maintainers |= pkg_maintainers
+                all_maintainers |= maintainers
 
-    return with_maintainers, without_maintainers, maintainers
+    return with_maintainers, without_maintainers, all_maintainers
 
 
 async def found(coroutine):
@@ -148,8 +182,8 @@ async def add_reviewers(gh, repository, pull_request, number):
     if len(packages) > 100:
         return
 
-    maintained_pkgs, unmaintained_pkgs, maintainers = find_maintainers(
-        packages, repository, pull_request, number
+    maintained_pkgs, unmaintained_pkgs, maintainers = await find_maintainers(
+        gh, packages, repository, pull_request, number
     )
 
     if maintainers:
