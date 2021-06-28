@@ -159,9 +159,15 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
 
 
 async def found(coroutine):
-    """Wrapper for coroutines that returns None on 404, result otherwise."""
+    """Wrapper for coroutines that returns None on 404, result or True otherwise.
+
+    ``True`` is returned if the request was successful but the result would
+    otherwise be ``False``-ish, e.g. if the request returns no content.
+
+    """
     try:
-        return await coroutine
+        result = await coroutine
+        return result or True
     except gidgethub.HTTPException as e:
         if e.status_code == 404:
             return None
@@ -186,6 +192,17 @@ async def add_reviewers(gh, repository, pull_request, number):
         gh, packages, repository, pull_request, number
     )
 
+    # Ask people to maintain packages that don't have maintainers.
+    if unmaintained_pkgs:
+        # Ask for maintainers
+        # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
+        comment_body = no_maintainers_comment.format(
+            author=pull_request["user"]["login"],
+            packages_without_maintainers="\n* ".join(sorted(unmaintained_pkgs)),
+        )
+        await gh.post(pull_request["comments_url"], {}, data={"body": comment_body})
+
+    # for packages that *do* have maintainers listed
     if maintainers:
         # See which maintainers have permission to be requested for review
         # Requires at least "read" permission.
@@ -194,11 +211,18 @@ async def add_reviewers(gh, repository, pull_request, number):
         for user in maintainers:
             logger.info(f"User: {user}")
 
+            # https://api.github.com/repos/spack/spack/collaborators/{user}
+            # will return 404 if the user is not a collaborator, BUT
+            # https://api.github.com/repos/spack/spack/collaborators/{user}/permission
+            # will show read for pretty much anyone for public repos. So we have to
+            # check the first URL first.
             collaborators_url = repository["collaborators_url"]
             if not await found(gh.getitem(collaborators_url, {"collaborator": user})):
+                logger.info(f"Not found: {user}")
                 non_reviewers.append(user)
                 continue
 
+            # only check permission once we know they're a collaborator
             result = await gh.getitem(
                 collaborators_url + "/permission",
                 {"collaborator": user},
@@ -219,39 +243,40 @@ async def add_reviewers(gh, repository, pull_request, number):
                 data={"reviewers": reviewers[:15]},
             )
 
-        # If not, give them permission and comment
+        # If not, try to make them collaborators and comment
         if non_reviewers:
-            logger.info(f"Adding collaborators: {non_reviewers}")
+            # If the repository has a team called "maintainers", we'll try to
+            # add the non-reviewers to it. That team determines what
+            # permissions the maintainers get on the repo.
+            teams_url = repository["teams_url"]
+            members_url = None
+            async for team in gh.getiter(teams_url):
+                if team["name"] == "maintainers":
+                    # This URL will auto-invite the user if possible. It's not
+                    # the same as the members_url in the teams_url response,
+                    # and it seems like we have to construct it manually.
+                    members_url = team["html_url"].replace(
+                        "/github.com/", "/api.github.com/"
+                    )
+                    members_url += "/memberships{/member}"
+                    logger.info(f"made members_url: {members_url}")
+                    break
 
-            # We do not want to give users write permission here, as write
-            # permission allows people to submit approving reviews for
-            # auto-merge. Instead, we'd like to give them triage, which allows
-            # them to be requested, label the PR, etc., but not determine
-            # whether it should be merged.
-            # https://docs.github.com/en/rest/reference/repos#add-a-repository-collaborator
-            for user in non_reviewers:
-                await gh.put(
-                    repository["collaborators_url"],
-                    {"collaborator": user},
-                    # TODO: Looks like the collaborators API does not yet support
-                    # 'triage' here, so we use 'read' instead.
-                    data={"permission": "read"},
-                )
+            if not members_url:
+                logger.info(f"No 'maintainers' team; not adding collaborators")
+            else:
+                logger.info(f"Adding collaborators: {non_reviewers}")
+                for user in non_reviewers:
+                    await gh.put(
+                        members_url,
+                        {"member": user},
+                        data={"role": "member"},
+                    )
 
             # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
             comment_body = non_reviewers_comment.format(
                 packages_with_maintainers="\n* ".join(sorted(maintained_pkgs)),
                 non_reviewers=" @".join(sorted(non_reviewers)),
-            )
-            await gh.post(pull_request["comments_url"], {}, data={"body": comment_body})
-
-        # Ask people to maintain packages that don't have maintainers.
-        if unmaintained_pkgs:
-            # Ask for maintainers
-            # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
-            comment_body = no_maintainers_comment.format(
-                author=pull_request["user"]["login"],
-                packages_without_maintainers="\n* ".join(sorted(unmaintained_pkgs)),
             )
             await gh.post(pull_request["comments_url"], {}, data={"body": comment_body})
 
