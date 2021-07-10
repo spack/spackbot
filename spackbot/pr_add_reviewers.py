@@ -286,5 +286,4 @@ async def on_pull_request(event, gh, session):
     pull_request = event.data["pull_request"]
     repository = event.data["repository"]
     number = event.data["number"]
-
     await add_reviewers(gh, repository, pull_request, number)

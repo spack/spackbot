@@ -1,5 +1,7 @@
 # Spackbot
 
+![docs/assets/img/spackbot.png](docs/assets/img/spackbot.png)
+
 This is a GitHub bot for the [Spack](https://github.com/spack/spack)
 project. It automates various workflow tasks and handles jobs like:
 
@@ -28,6 +30,22 @@ pull requests being opened through
 The Spackbot process in the container looks at these payloads and reacts to
 them by calling commands through the
 [GitHub API](https://docs.github.com/en/rest).
+
+## Interactions
+
+The table below shows interactions that spackbot supports. For some, they are 
+triggered by user interaction (an `@spackbot` command). Others are run automatically
+with different events.
+
+| Name | Description | Command |
+|------|-------------|---------|
+|labels| Add labels to newly open pull requests | |
+|maintainers| Suggest reviewers (package maintainers) for newly opened pull request | |
+|hello| Say hello to spackbot | `@spackbot hello`|
+|help| Ask for help from spackbot | `@spackbot help` or `@spackbot commands`|
+|style| Spackbot will detect a failed style check and tell you how to fix it | |
+
+The interactions above are each represented by a Python file in [spackbot](spackbot).
 
 ## Developer Steps with Docker Compose
 
@@ -71,10 +89,19 @@ You'll first need to create a  [Follow this link](https://github.com/settings/ap
    - Discussions: read and write
    - Issues: read only
    - Pull Requests: read and write
+   - checks: read only
+   - deployments: read only
  - **Organization Permissions** none
    - Members: read and write
  - **User Permissions** none
- - **Subscribe to events**: issue comment
+ - **Subscribe to events**:
+  - issue comment
+  - pull requests
+  - pull request review comment
+  - status
+  - check run
+  - check suite
+  - deployment status
  - It's safer to select to run only on your user account.
  
 After you create the App you will be redirected to a screen that has the app ID and
@@ -90,7 +117,7 @@ Make sure to add these variables to your .env, specifically adding:
  - GITHUB_PRIVATE_KEY the name of the file in the root here.
  - GITHUB_APP_IDENTIFIER is the "APP ID" at the top
  - GITHUB_APP_REQUESTER is your GitHub account
- - GITHUB_WEBHOOK_SECRET is technically a client secret (that is used for webhooks)
+ - GITHUB_WEBHOOK_SECRET also needs to be added to your app.
 
 
 ### 4. Build and Start containers
@@ -105,16 +132,19 @@ And start your containers!
 
 ```bash
 $ docker-compose up -d
+$ docker-compose restart
 ```
 
+We do the restart to make sure the server and smee are running.
 You should be able to see logs (and any errors) by way of:
 
 ```bash
 $ docker-compose logs
-Attaching to spack-bot_spackbot_1, spack-bot_smee_1
 smee_1      | smee --url https://smee.io/VtrVSOmJV7haXpwH --target http://spackbot --port 8080
 smee_1      | Forwarding https://smee.io/VtrVSOmJV7haXpwH to http://spackbot
 smee_1      | Connected https://smee.io/VtrVSOmJV7haXpwH
+spackbot_1  | ======== Running on http://0.0.0.0:8080 ========
+spackbot_1  | (Press CTRL+C to quit)
 ```
 Now you can develop/make changes, and then restart the containers to restart the
 server. Since [spackbot](spackbot) is bound to the app install location in the container,
@@ -152,8 +182,27 @@ port 8080. You'll need to expose that port to run. You can pass an environment
 file to docker as well. Here's an example:
 
 ```console
-$ docker run --rm -it --env-file .env -p8080:8080 spack/spackbot
+$ docker run --rm -it --env-file .env -p 8080:8080 spack/spackbot
 ```
+
+## Install the App
+
+Whether you plan to run with docker-copmose or locally, you will need to install
+the app to a repository to get the full functionality.
+So the next step is to install your app, ideally to your fork of spack. To do this,
+go back to the App in developer settings and click on it's public url, which
+will look something like `https://github.com/apps/<appname>`. You can then click
+to install the app to your fork of spack. Then make sure your app is running,
+and open a pull request. If you watch the server logs you should see:
+
+```console
+$ docker-compose logs -f
+spackbot_1  | INFO:aiohttp.access:172.19.0.2 [10/Jul/2021:18:11:17 +0000] "POST / HTTP/1.1" 200 174 "-" "GitHub-Hookshot/7621ac9"
+smee_1      | POST http://spackbot:8080/ - 200
+```
+
+If there are any errors they will appear there.
+
 
 ## License
 
