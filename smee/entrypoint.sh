@@ -11,4 +11,4 @@
 
 # SMEE_URL should come from .env file bound via docker-compose
 printf "smee --url ${SMEE_URL} --target http://spackbot --port 8080\n"
-smee --url ${SMEE_URL} --target http://spackbot --port 8080
+smee --url ${SMEE_URL} --target http://spackbot:8080 --port 8080
