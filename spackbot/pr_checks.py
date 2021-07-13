@@ -20,7 +20,7 @@ It looks like you had an issue with style checks! To fix this, you can run:
 $ spack style --fix
 ```
 
-And then update the pull request here.
+And then update the pull request here. Or you can just say `@spackbot fix style` and I'll do it!
 """
 
 

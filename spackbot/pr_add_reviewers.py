@@ -12,11 +12,10 @@ import tempfile
 import gidgethub
 from sh.contrib import git
 from gidgethub import routing
+from .helpers import temp_dir, found, spack_develop_url
 
 logger = logging.getLogger(__name__)
 router = routing.Router()
-
-spack_develop_url = "https://github.com/spack/spack"
 
 package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 
@@ -65,18 +64,6 @@ async def changed_packages(gh, pull_request):
         packages.append(match.group(1))
 
     return packages
-
-
-@contextlib.contextmanager
-def temp_dir():
-    """Create a temporary directory, cd into it, destroy it and cd back when done."""
-    pwd = os.getcwd()
-    with tempfile.TemporaryDirectory() as temp_dir:
-        try:
-            os.chdir(temp_dir)
-            yield temp_dir
-        finally:
-            os.chdir(pwd)
 
 
 async def parse_maintainers_from_patch(gh, pull_request):
@@ -156,22 +143,6 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
                 all_maintainers |= maintainers
 
     return with_maintainers, without_maintainers, all_maintainers
-
-
-async def found(coroutine):
-    """Wrapper for coroutines that returns None on 404, result or True otherwise.
-
-    ``True`` is returned if the request was successful but the result would
-    otherwise be ``False``-ish, e.g. if the request returns no content.
-
-    """
-    try:
-        result = await coroutine
-        return result or True
-    except gidgethub.HTTPException as e:
-        if e.status_code == 404:
-            return None
-        raise
 
 
 async def add_reviewers(gh, repository, pull_request, number):
@@ -282,7 +253,7 @@ async def add_reviewers(gh, repository, pull_request, number):
 
 
 @router.register("pull_request", action="opened")
-async def on_pull_request(event, gh, session):
+async def on_pull_request(event, gh, *args, session, **kwargs):
     pull_request = event.data["pull_request"]
     repository = event.data["repository"]
     number = event.data["number"]

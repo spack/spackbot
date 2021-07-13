@@ -1,4 +1,10 @@
 aiohttp
+requests
 gidgethub
 python_dotenv
 sh
+
+# Add these so we don't want for install
+mypy
+flake8
+isort
