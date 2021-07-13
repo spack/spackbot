@@ -44,6 +44,7 @@ with different events.
 |hello| Say hello to spackbot | `@spackbot hello`|
 |help| Ask for help from spackbot | `@spackbot help` or `@spackbot commands`|
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
+|fix style| The command to fix style will run `spack style --fix`| `@spackbot fix style`|
 
 The interactions above are each represented by a Python file in [spackbot](spackbot).
 
@@ -87,6 +88,7 @@ You'll first need to create a  [Follow this link](https://github.com/settings/ap
  - **Repo Permissions** You want to add:
    - Administration: read and write
    - Discussions: read and write
+   - Contents: read and write
    - Issues: read only
    - Pull Requests: read and write
    - checks: read only
