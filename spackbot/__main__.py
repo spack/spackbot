@@ -15,7 +15,13 @@ from dotenv import load_dotenv
 from gidgethub import routing, sansio
 from gidgethub import aiohttp as gh_aiohttp
 
-from . import pr_add_labels, pr_add_reviewers, pr_add_comments, pr_check_style
+from . import (
+    pr_add_labels,
+    pr_add_reviewers,
+    pr_add_comments,
+    pr_check_style,
+    pr_run_pipeline,
+)
 
 # take environment variables from .env file (if present)
 load_dotenv()
@@ -32,7 +38,13 @@ PRIVATE_KEY = os.environ.get("GITHUB_PRIVATE_KEY")
 APP_IDENTIFIER = os.environ.get("GITHUB_APP_IDENTIFIER")
 REQUESTER = os.environ.get("GITHUB_APP_REQUESTER")
 
-router = routing.Router(pr_add_labels.router, pr_add_reviewers.router, pr_add_comments.router, pr_check_style.router)
+router = routing.Router(
+    pr_add_labels.router,
+    pr_add_reviewers.router,
+    pr_add_comments.router,
+    pr_check_style.router,
+    pr_run_pipeline.router,
+)
 routes = web.RouteTableDef()
 
 
@@ -124,7 +136,7 @@ def fix_private_key():
 
     # If we are given a file, load into variable
     if PRIVATE_KEY and os.path.exists(PRIVATE_KEY):
-        with open(PRIVATE_KEY, 'r') as handle:
+        with open(PRIVATE_KEY, "r") as handle:
             PRIVATE_KEY = handle.read()
 
     if PRIVATE_KEY:

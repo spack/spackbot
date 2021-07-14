@@ -48,7 +48,7 @@ label_patterns = {
     },
     "update-package": {
         "filename": r"^var/spack/repos/builtin/packages/[^/]+/package.py$",
-        "status": [r"^modified$", r"^renamed$"]
+        "status": [r"^modified$", r"^renamed$"],
     },
     #
     # Variables
