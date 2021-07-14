@@ -111,14 +111,8 @@ async def fix_style(event, gh, token):
     clone_url = "https://%s:%s@github.com/%s" % (user, token, repository["full_name"])
 
     # Remote we will PR to
-    pr_tobranch = pr["head"]["ref"]
+    pr_tobranch = pr["base"]["ref"]
     pr_branch = "spackbot/%s" % branch
-
-    # Are we doing a PR across a fork?
-    to_owner = pr["head"]["repo"]["owner"]["login"]
-    from_owner = pr["base"]["repo"]["owner"]["login"]
-    if to_owner != from_owner:
-        pr_tobranch = "%s:%s" % (to_owner, pr_tobranch)
 
     # At this point, we can clone the repository and make the change
     with temp_dir() as cwd:
@@ -173,12 +167,13 @@ async def fix_style(event, gh, token):
             git("pull", "origin", pr_branch)
             git("push", "origin", pr_branch)
 
-        # Open a pull request
+        # Open a pull request of the new branch against our own URL
+        # If this works we can close the previous PR
         opened = await gh.post(
-            pr["head"]["repo"]["pulls_url"],
+            repository["pulls_url"],
             {},
             data={
-                "body": "This is a pull request by [spackbot](https://github.com/spack/spack-bot) to make style changes for %s"
+                "body": "This is a pull request by [spackbot](https://github.com/spack/spack-bot) to make style changes to update %s"
                 % pr["html_url"],
                 "title": "Style changes for your pull request to spack from spackbot",
                 "head": pr_branch,
