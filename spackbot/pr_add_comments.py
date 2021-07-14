@@ -10,7 +10,7 @@ import re
 import requests
 
 from sh.contrib import git
-from .helpers import found, temp_dir, run_command
+from .helpers import found, temp_dir, run_command, spack_develop_url
 from gidgethub import routing
 
 
@@ -56,7 +56,7 @@ def get_style_message(output):
     """
     return (
         """
-I was able to run `spack style --fix` for you!
+Here is the output from `spack style --fix`, which I ran for you!
     
 ```bash
 %s
@@ -81,6 +81,7 @@ async def fix_style(event, gh, token):
     from anyone with write access to the repository, we commit, and we commit
     under the identity of the original person that opened the PR.
     """
+    number = event.data["issue"]["pull_request"]["url"].split("/")[-1]
     response = requests.get(event.data["issue"]["pull_request"]["url"])
     pr = response.json()
 
@@ -105,37 +106,40 @@ async def fix_style(event, gh, token):
     user = pr["user"]["login"]
     email = "%s@users.noreply.github.com" % user
 
-    # Get the branch and pull request url
-    branch = pr["head"]["ref"]
-    clone_url = pr["head"]["repo"]["svn_url"]
-    naked_url = clone_url.replace("https://", "", 1)
+    # Reference the branch based on the PR number
+    branch = "pull/%s" % number
+    clone_url = "https://%s:%s@github.com/%s" % (user, token, repository["full_name"])
 
-    # If for some reason the message below isn't generated?
-    message = "There was a problem running fixes! @spackbot needs a maintainer's help!"
+    # Remote we will PR to
+    pr_tobranch = pr["head"]["ref"]
+    pr_branch = "spackbot/%s" % branch
+
+    # Are we doing a PR across a fork?
+    to_owner = pr["head"]["repo"]["owner"]["login"]
+    from_owner = pr["base"]["repo"]["owner"]["login"]
+    if to_owner != from_owner:
+        pr_tobranch = "%s:%s" % (to_owner, pr_tobranch)
 
     # At this point, we can clone the repository and make the change
     with temp_dir() as cwd:
-        git("clone", "-b", branch, clone_url)
+
+        # Clone spack develop and fetch
+        git("clone", clone_url)
         os.chdir("spack")
         git("config", "--local", "user.name", user)
         git("config", "--local", "user.email", email)
+        git("fetch")
 
-        # This will authenticate the push with the app token
+        # Fetch all pull request by number
         git(
-            "remote",
-            "set-url",
+            "fetch",
+            "--force",
             "origin",
-            "https://%s:%s@%s.git" % (user, token, naked_url),
+            "+refs/pull/%s/head:refs/remotes/origin/pull/%s" % (number, number),
         )
 
-        # We need to add develop remote for this to work
-        git("remote", "add", "upstream", "https://github.com/spack/spack")
-        git("fetch", "upstream")
-
-        # This won't work if we are already on a develop branch
-        if branch != "develop":
-            git("checkout", "--track", "upstream/develop")
-            git("checkout", branch)
+        # Checkout a spackbot namespaced branch based off the PR
+        git("checkout", branch)
 
         # Add newly cloned `spack` to PATH
         os.environ["PATH"] = f"{cwd}/spack/bin:" + os.environ["PATH"]
@@ -159,13 +163,37 @@ async def fix_style(event, gh, token):
         if is_up_to_date(res):
             message += "\nI wasn't able to make any changes, but please see the message above for any remaining issues!"
             return message
-        message += "\nI've updated the branch with isort fixes."
 
-        # Finally, try to push, update the message if permission not allowed
+        # Push the new branch (or update existing)
         try:
-            git("push", "origin", branch)
+            git("checkout", "-b", pr_branch, branch)
+            git("push", "origin", pr_branch)
         except:
-            message += "\n\nBut it looks like I'm not able to push to your branch. 😭️"
+            git("checkout", pr_branch)
+            git("pull", "origin", pr_branch)
+            git("push", "origin", pr_branch)
+
+        # Open a pull request
+        opened = await gh.post(
+            pr["head"]["repo"]["pulls_url"],
+            {},
+            data={
+                "body": "This is a pull request by [spackbot](https://github.com/spack/spack-bot) to make style changes for %s"
+                % pr["html_url"],
+                "title": "Style changes for your pull request to spack from spackbot",
+                "head": pr_branch,
+                "base": pr_tobranch,
+                "maintainer_can_modify": True,
+            },
+        )
+
+        message += (
+            "\nI've updated the branch with isort fixes! You can integrate fixes by merging the opened pull request at %s"
+            % opened["html_url"]
+        )
+
+        # Open a pull request to the original repository
+        await gh.post(event.data["issue"]["comments_url"], {}, data={"body": message})
 
     return message
 
