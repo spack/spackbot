@@ -43,6 +43,7 @@ with different events.
 |maintainers| Suggest reviewers (package maintainers) for newly opened pull request | |
 |hello| Say hello to spackbot | `@spackbot hello`|
 |help| Ask for help from spackbot | `@spackbot help` or `@spackbot commands`|
+|pipelines| Ask spackbot to re-run a GitLab pipeline | `@spackbot (re-)run pipelines`|
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
 
 The interactions above are each represented by a Python file in [spackbot](spackbot).
@@ -118,7 +119,7 @@ Make sure to add these variables to your .env, specifically adding:
  - GITHUB_APP_IDENTIFIER is the "APP ID" at the top
  - GITHUB_APP_REQUESTER is your GitHub account
  - GITHUB_WEBHOOK_SECRET also needs to be added to your app.
-
+ - GITLAB_TOKEN is a Gitlab API token to interact with the GitLab API to re-run pipelines there.
 
 ### 4. Build and Start containers
 
@@ -160,6 +161,7 @@ To deploy this, you'll need several environment variables set:
 * `GITHUB_PRIVATE_KEY`: Private key created by the GitHub app.
 * `GITHUB_APP_IDENTIFIER`: ID of the app on GitHub.
 * `GITHUB_APP_REQUESTER`: Account the app appears as.
+* `GITLAB_TOKEN`: GitLab API token
 * `GITHUB_WEBHOOK_SECRET`: Secret for webhooks, set when you configured the
   GitHub app.
 

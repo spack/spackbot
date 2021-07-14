@@ -1,4 +1,5 @@
 aiohttp
+requests
 gidgethub
 python_dotenv
 sh
