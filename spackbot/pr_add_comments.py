@@ -16,7 +16,7 @@ router = routing.Router()
 
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop"]
-alias_regex = "(%s)" "|".join(aliases)
+alias_regex = "(%s)" % "|".join(aliases)
 
 
 def tell_joke():
@@ -61,9 +61,10 @@ If you need help or see there might be an issue with me, open an issue [here](ht
 
 
 @router.register("issue_comment", action="created")
-@router.register("issue_comment", action="edited")
 async def add_comments(event, gh, *args, session, **kwargs):
-    """Respond to messages to spackbot"""
+    """
+    Respond to messages (comments) to spackbot
+    """
 
     # We can only tell PR and issue comments apart by this field
     if "pull_request" not in event.data["issue"]:

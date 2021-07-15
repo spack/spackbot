@@ -60,9 +60,10 @@ async def run_pipeline(event, gh):
 
 
 @router.register("issue_comment", action="created")
-@router.register("issue_comment", action="edited")
 async def add_comments(event, gh, *args, session, **kwargs):
-    """Respond to request to re-run pipeline"""
+    """
+    Respond to request to re-run pipeline
+    """
     # We can only tell PR and issue comments apart by this field
     if "pull_request" not in event.data["issue"]:
         return
