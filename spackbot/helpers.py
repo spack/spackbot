@@ -19,9 +19,11 @@ spack_gitlab_url = "https://gitlab.spack.io"
 # Spack has project ID 2
 gitlab_spack_project_url = "https://gitlab.spack.io/api/v4/projects/2"
 
+package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
+
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop"]
-alias_regex = "(%s)" "|".join(aliases)
+alias_regex = "(%s)" % "|".join(aliases)
 
 
 @contextlib.contextmanager
