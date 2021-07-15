@@ -3,44 +3,17 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import contextlib
 import logging
 import os
 import re
-import tempfile
 
-import gidgethub
 from sh.contrib import git
 from gidgethub import routing
+from spackbot.helpers import found, spack_develop_url, package_path, temp_dir
+import spackbot.comments as comments
 
 logger = logging.getLogger(__name__)
 router = routing.Router()
-
-spack_develop_url = "https://github.com/spack/spack"
-
-package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
-
-non_reviewers_comment = """\
-  @{non_reviewers} can you review this PR?
-
-  This PR modifies the following package(s), for which you are listed as a maintainer:
-
-  * {packages_with_maintainers}
-"""
-
-no_maintainers_comment = """\
-Hi @{author}! I noticed that the following package(s) don't yet have maintainers:
-
-* {packages_without_maintainers}
-
-Are you interested in adopting any of these package(s)? If so, simply add the following to the package class:
-```python
-    maintainers = ['{author}']
-```
-If not, could you contact the developers of this package and see if they are interested? Please don't add maintainers without their consent.
-
-_You don't have to be a Spack expert or package developer in order to be a "maintainer", it just gives us a list of users willing to review PRs or debug issues relating to this package. A package can have multiple maintainers; just add a list of GitHub handles of anyone who wants to volunteer._
-"""
 
 
 async def changed_packages(gh, pull_request):
@@ -65,18 +38,6 @@ async def changed_packages(gh, pull_request):
         packages.append(match.group(1))
 
     return packages
-
-
-@contextlib.contextmanager
-def temp_dir():
-    """Create a temporary directory, cd into it, destroy it and cd back when done."""
-    pwd = os.getcwd()
-    with tempfile.TemporaryDirectory() as temp_dir:
-        try:
-            os.chdir(temp_dir)
-            yield temp_dir
-        finally:
-            os.chdir(pwd)
 
 
 async def parse_maintainers_from_patch(gh, pull_request):
@@ -158,27 +119,15 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
     return with_maintainers, without_maintainers, all_maintainers
 
 
-async def found(coroutine):
-    """Wrapper for coroutines that returns None on 404, result or True otherwise.
-
-    ``True`` is returned if the request was successful but the result would
-    otherwise be ``False``-ish, e.g. if the request returns no content.
-
-    """
-    try:
-        result = await coroutine
-        return result or True
-    except gidgethub.HTTPException as e:
-        if e.status_code == 404:
-            return None
-        raise
-
-
-async def add_reviewers(gh, repository, pull_request, number):
+async def add_reviewers(event, gh):
     """Add a comment on a PR to ping maintainers to review the PR.
 
     If a package does not have any maintainers yet, request them.
     """
+    pull_request = event.data["pull_request"]
+    repository = event.data["repository"]
+    number = event.data["number"]
+
     logger.info(f"Looking for reviewers for PR #{number}...")
 
     packages = await changed_packages(gh, pull_request)
@@ -196,7 +145,7 @@ async def add_reviewers(gh, repository, pull_request, number):
     if unmaintained_pkgs:
         # Ask for maintainers
         # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
-        comment_body = no_maintainers_comment.format(
+        comment_body = comments.no_maintainers_comment.format(
             author=pull_request["user"]["login"],
             packages_without_maintainers="\n* ".join(sorted(unmaintained_pkgs)),
         )
@@ -263,7 +212,7 @@ async def add_reviewers(gh, repository, pull_request, number):
                     break
 
             if not members_url:
-                logger.info(f"No 'maintainers' team; not adding collaborators")
+                logger.info("No 'maintainers' team; not adding collaborators")
             else:
                 logger.info(f"Adding collaborators: {non_reviewers}")
                 for user in non_reviewers:
@@ -274,16 +223,8 @@ async def add_reviewers(gh, repository, pull_request, number):
                     )
 
             # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
-            comment_body = non_reviewers_comment.format(
+            comment_body = comments.non_reviewers_comment.format(
                 packages_with_maintainers="\n* ".join(sorted(maintained_pkgs)),
                 non_reviewers=" @".join(sorted(non_reviewers)),
             )
             await gh.post(pull_request["comments_url"], {}, data={"body": comment_body})
-
-
-@router.register("pull_request", action="opened")
-async def on_pull_request(event, gh, session):
-    pull_request = event.data["pull_request"]
-    repository = event.data["repository"]
-    number = event.data["number"]
-    await add_reviewers(gh, repository, pull_request, number)

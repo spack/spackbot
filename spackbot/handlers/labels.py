@@ -3,14 +3,11 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import logging
 import re
+import logging
 
-from gidgethub import routing
-
-
-logger = logging.getLogger(__name__)
-router = routing.Router()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("spackbot")
 
 
 #: ``label_patterns`` maps labels to patterns that tell us to apply the labels.
@@ -133,10 +130,10 @@ for label, pattern_dict in label_patterns.items():
         pattern_dict[attr] = [re.compile(s) for s in patterns]
 
 
-@router.register("pull_request", action="opened")
-@router.register("pull_request", action="synchronize")
-async def label_pull_requests(event, gh, *args, session, **kwargs):
-    """Add labels to PRs based on which files were modified."""
+async def add_labels(event, gh):
+    """
+    Add labels to a pull request
+    """
     pull_request = event.data["pull_request"]
     number = event.data["number"]
     logger.info(f"Labeling PR #{number}...")

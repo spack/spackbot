@@ -4,17 +4,12 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
-import random
 import requests
-import re
 import os
 
-from .helpers import found, alias_regex, gitlab_spack_project_url, spack_gitlab_url
-from gidgethub import routing
-
+from spackbot.helpers import found, gitlab_spack_project_url, spack_gitlab_url
 
 logger = logging.getLogger(__name__)
-router = routing.Router()
 
 # We can only make the request with a GITLAB TOKEN
 GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
@@ -24,6 +19,10 @@ async def run_pipeline(event, gh):
     """
     Make a request to re-run a pipeline.
     """
+    # Early exit if not authenticated
+    if not GITLAB_TOKEN:
+        return "I'm not able to re-run the pipeline now because I don't have authentication."
+
     # Get the pull request number
     pr_url = event.data["issue"]["pull_request"]["url"]
     number = pr_url.split("/")[-1]
@@ -57,31 +56,3 @@ async def run_pipeline(event, gh):
         url = "%s/%s" % (spack_gitlab_url, result["detailed_status"]["details_path"])
         return "I've started that [pipeline](%s) for you!" % url
     return "I had a problem triggering the pipeline."
-
-
-@router.register("issue_comment", action="created")
-async def add_comments(event, gh, *args, session, **kwargs):
-    """
-    Respond to request to re-run pipeline
-    """
-    # We can only tell PR and issue comments apart by this field
-    if "pull_request" not in event.data["issue"]:
-        return
-
-    # spackbot should not respond to himself!
-    if re.search(alias_regex, event.data["comment"]["user"]["login"]):
-        return
-
-    # Respond with appropriate messages
-    comment = event.data["comment"]["body"]
-
-    # @spackbot run pipeline | @spackbot re-run pipeline
-    message = None
-    if re.search("@spackbot (re-)?run pipeline", comment, re.IGNORECASE):
-        logger.info(f"Responding to request to re-run pipeline...")
-        if not GITLAB_TOKEN:
-            message = "I'm not able to re-run the pipeline now because I don't have authentication."
-        else:
-            message = await run_pipeline(event, gh)
-    if message:
-        await gh.post(event.data["issue"]["comments_url"], {}, data={"body": message})

@@ -152,6 +152,23 @@ server. Since [spackbot](spackbot) is bound to the app install location in the c
 your app will update with changes.
 
 
+## 5. Organization
+
+Different events are represented in [spackbot/routes.py](spackbot/routes.py).
+For example, there is one common entrypoint for spackbot to respond to comments,
+or the opening of a pull request, or a check run result. So you should first
+see if there is a router that already fits your purpose.
+
+1. If yes, you will want to edit the function to include your new route
+2. If not, you can add a new router.
+
+In most complex cases, the routers pass on execution to a handler, and handlers
+are in [spackbot/handlers](spackbot/handlers). For each handler, you can write
+whatever functionality you need in the submodule (e.g., `handlers.style`) and
+then import the function that is needed by the router in `__init__`. Helpers
+or variables shared amongst modules should go into [helpers.py](spackbot/helpers.py),
+and comments should go into [comments.py](spackbot/comments.py).
+
 ## Developer Steps with Local Docker
 
 ### 1. Required environment variables
