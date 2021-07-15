@@ -5,6 +5,7 @@
 
 import logging
 import random
+import requests
 import re
 
 from gidgethub import routing
@@ -16,6 +17,19 @@ router = routing.Router()
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop"]
 alias_regex = "(%s)" "|".join(aliases)
+
+
+def tell_joke():
+    """
+    Tell a joke to ease the PR tension!
+    """
+    response = requests.get(
+        "https://official-joke-api.appspot.com/jokes/programming/random"
+    )
+    if response.status_code == 200:
+        joke = response.json()[0]
+        return "> %s\n *%s*\n😄️" % (joke["setup"], joke["punchline"])
+    return "I'm a little tired now for a joke, but hey, you're funny looking! 😄️"
 
 
 def say_hello():
@@ -64,12 +78,17 @@ async def add_comments(event, gh, *args, session, **kwargs):
 
     # @spackbot hello
     message = None
-    if re.search("@spackbot hello", comment):
+    if re.search("@spackbot hello", comment, re.IGNORECASE):
         logger.info(f"Responding to hello message {comment}...")
         message = say_hello()
 
+    # Hey @spackbot tell me a joke!
+    elif "@spackbot" in comment and "joke" in comment:
+        logger.info(f"Responding to request for joke {comment}...")
+        message = tell_joke()
+
     # @spackbot commands OR @spackbot help
-    elif re.search("@spackbot (commands|help)", comment):
+    elif re.search("@spackbot (commands|help)", comment, re.IGNORECASE):
         logger.debug("Responding to request for help commands.")
         message = commands_message
 
