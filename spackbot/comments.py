@@ -57,6 +57,23 @@ $ spack style --fix
 And then update the pull request here.
 """
 
+maintainer_request = """
+It looks like you are opening an issue about a package, and we've found maintainers that might be able to help!
+
+{maintainers}
+
+"""
+
+
+multiple_packages = """
+Hey there! I noticed that you are adding or updating multiple packages:\n\n
+
+{packages}
+
+To get a speedier review for each, I'd like to suggest that you break this into multiple pull requests, with one per package.
+"""
+
+
 non_reviewers_comment = """\
   @{non_reviewers} can you review this PR?
 

@@ -8,6 +8,8 @@ Hi I'm spackbot! 👋  I can help you with [spack](https://github.com/spack/spac
 - [Style](#style)
 - [Labels](#labels)
 - [Maintainers](#maintainers)
+- [Packages](#packages)
+- [Issues](#issues)
 
 ## Quick Start
  
@@ -57,3 +59,17 @@ Are you opening a pull request for a package? I'll help to find and ping maintai
 
 And I just might have some other commands and jokes up my sleeve! Want to learn more? Browse the links on the left navigation, or
 <a href="https://github.com/spack/spack-bot" target="_blank">ask me a question</a>. Thanks for stopping by! 😉
+
+### Packages
+
+It's often easier (and faster!) to review pull requests when they are opened for single packages.
+Toward this aim, if Spackbot sees that you've opened a pull request that is changing multiple packages,
+he will suggest to open a different pull request for each package.
+
+### Issues
+
+When you open an issue, it's important to triage and notify the people that can help as
+quickly as possible. Spackbot helps here by looking for known package names in the title
+of the issue, and then pinging maintainers that might know about the package. This means
+that if you are opening an issue on a package, you should include the package name
+in the title.

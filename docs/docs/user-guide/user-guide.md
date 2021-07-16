@@ -12,6 +12,7 @@
   - [Pipelines](#pipelines)
   - [Style](#style)
   - [Packages](#packages)
+  - [Issues](#issues)
   
 ## How it works
 
@@ -39,6 +40,7 @@ with different events.
 |pipelines| Ask spackbot to re-run a GitLab pipeline | `@spackbot (re-)run pipelines`|
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
 |packages| Spackbot will give you a friendly suggestion to open multiple PRs for changes to multiple packages | |
+|issues| If you open an issue that references a package in the title, spackbot will ping maintainers | |
 
 ## Commands
 
@@ -97,6 +99,7 @@ to ask him for help, which can be done in two ways:
 @spackbot help
 @spackbot commands
 ```
+
 ![img/help.png](img/help.png)
 
 For the commands above (and any command) capitalization does not matter.
@@ -141,3 +144,12 @@ he will kindly suggest that you consider opening multiple pull requests:
 ![img/multiple-packages.png](img/multiple-packages.png)
 
 This is good advice as it will make the pull requests easier to review.
+
+## Issues
+
+?> automated interaction
+
+If you open an issue and mention a known package in the title, Spackbot
+will ping maintainers on the package to ask for help.
+
+![img/issue-ping.png](img/issue-ping.png)

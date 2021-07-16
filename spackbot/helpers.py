@@ -6,10 +6,11 @@
 
 from io import StringIO
 import contextlib
-import os
-import tempfile
-import re
 import gidgethub
+import os
+import re
+import requests
+import tempfile
 
 """Shared function helpers that can be used across routes"
 """
@@ -25,6 +26,21 @@ package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop"]
 alias_regex = "(%s)" % "|".join(aliases)
+
+
+def list_packages():
+    """
+    Get a list of package names
+    """
+    packages = []
+    response = requests.get("https://spack.github.io/packages/data/packages.json")
+    if response.status_code == 200:
+        packages = [x.lower() for x in response.json()]
+    else:
+        logger.warning(
+            "Issue retrieving package list! Assigning maintainers to PRs might not work"
+        )
+    return packages
 
 
 async def changed_packages(gh, pull_request):

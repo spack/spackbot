@@ -12,6 +12,7 @@ from .helpers import alias_regex
 # View handler functions
 import spackbot.handlers as handlers
 import spackbot.comments as comments
+import spackbot.helpers as helpers
 
 from gidgethub import routing
 from typing import Any
@@ -22,7 +23,9 @@ logger = logging.getLogger("spackbot")
 
 class SpackbotRouter(routing.Router):
 
-    """Custom router to handle common interactions for spackbot"""
+    """
+    Custom router to handle common interactions for spackbot
+    """
 
     async def dispatch(self, event: sansio.Event, *args: Any, **kwargs: Any) -> None:
         """Dispatch an event to all registered function(s)."""
@@ -38,6 +41,7 @@ class SpackbotRouter(routing.Router):
 
 
 router = SpackbotRouter()
+router.packages = helpers.list_packages()
 
 
 @router.register("check_run", action="completed")
@@ -63,10 +67,18 @@ async def on_pull_request(event, gh, session):
     await handlers.add_reviewers(event, gh)
 
 
+@router.register("issues", action="created")
+async def on_issue_comments(event, gh, *args, session, **kwargs):
+    """
+    Receive issue comments
+    """
+    await handlers.add_issue_maintainers(event, gh, router.packages)
+
+
 @router.register("issue_comment", action="created")
 async def add_comments(event, gh, *args, session, **kwargs):
     """
-    Respond to all messages (comments) to spackbot
+    Receive pull request comments
     """
     # We can only tell PR and issue comments apart by this field
     if "pull_request" not in event.data["issue"]:
