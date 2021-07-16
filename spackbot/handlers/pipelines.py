@@ -34,9 +34,14 @@ async def run_pipeline(event, gh):
     sender = event.data["sender"]["login"]
     repository = event.data["repository"]
     collaborators_url = repository["collaborators_url"]
+    author = pr["user"]["login"]
+
+    # If it's the PR author, we allow it
+    if author == sender:
+        logger.info(f"Author {author} is requesting a pipeline run.")
 
     # If they don't have write, we don't allow the command
-    if not await helpers.found(gh.getitem(collaborators_url, {"collaborator": sender})):
+    elif not await helpers.found(gh.getitem(collaborators_url, {"collaborator": sender})):
         logger.info(f"Not found: {sender}")
         return (
             "Sorry %s, I cannot do that for you. Only users with write can make this request!"
