@@ -71,7 +71,17 @@
                 );
               });
           },
-        ]
+        function(hook) {
+          var footer = [
+            '<hr/>',
+            '<footer>',
+            '<span style="float:right; width:50px"><a href="https://spack.io" target="_blank"><img src="../img/spack-logo-white.png"/></a></span>',
+            '</footer>'
+          ].join('');
+          hook.afterEach(function(html) {
+              return html + footer;
+          })
+      }]
     }
   </script>
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>

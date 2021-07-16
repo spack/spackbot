@@ -9,35 +9,17 @@ import re
 
 from sh.contrib import git
 from gidgethub import routing
-from spackbot.helpers import found, spack_develop_url, package_path, temp_dir
+from spackbot.helpers import (
+    found,
+    spack_develop_url,
+    package_path,
+    temp_dir,
+    changed_packages,
+)
 import spackbot.comments as comments
 
 logger = logging.getLogger(__name__)
 router = routing.Router()
-
-
-async def changed_packages(gh, pull_request):
-    """Return an array of packages that were modified by a PR.
-
-    Ignore deleted packages, since we can no longer query them for
-    maintainers.
-
-    """
-    # see which files were modified
-    packages = []
-    async for f in gh.getiter(pull_request["url"] + "/files"):
-        filename = f["filename"]
-        status = f["status"]
-
-        if status == "removed":
-            continue
-
-        match = re.match(package_path, filename)
-        if not match:
-            continue
-        packages.append(match.group(1))
-
-    return packages
 
 
 async def parse_maintainers_from_patch(gh, pull_request):

@@ -8,6 +8,7 @@ from io import StringIO
 import contextlib
 import os
 import tempfile
+import re
 import gidgethub
 
 """Shared function helpers that can be used across routes"
@@ -24,6 +25,30 @@ package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop"]
 alias_regex = "(%s)" % "|".join(aliases)
+
+
+async def changed_packages(gh, pull_request):
+    """Return an array of packages that were modified by a PR.
+
+    Ignore deleted packages, since we can no longer query them for
+    maintainers.
+
+    """
+    # see which files were modified
+    packages = []
+    async for f in gh.getiter(pull_request["url"] + "/files"):
+        filename = f["filename"]
+        status = f["status"]
+
+        if status == "removed":
+            continue
+
+        match = re.match(package_path, filename)
+        if not match:
+            continue
+        packages.append(match.group(1))
+
+    return packages
 
 
 @contextlib.contextmanager

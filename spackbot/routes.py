@@ -59,6 +59,7 @@ async def on_pull_request(event, gh, session):
     """
     Respond to the pull request being opened
     """
+    await handlers.count_packages(event, gh)
     await handlers.add_reviewers(event, gh)
 
 

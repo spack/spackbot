@@ -3,7 +3,7 @@
 ## Table of Contents
 
 - [How it works](#how-it-works)
-- [Interactions](#iteractions)
+- [Interactions](#interactions)
 - [Commands](#commands)
   - [Labels](#labels)
   - [Maintainers](#maintainers)
@@ -11,7 +11,8 @@
   - [Help](#help)
   - [Pipelines](#pipelines)
   - [Style](#style)
-
+  - [Packages](#packages)
+  
 ## How it works
 
 Spackbot is a pretty typical GitHub bot. It runs in a container somewhere in the cloud. A
@@ -37,7 +38,7 @@ with different events.
 |help| Ask for help from spackbot | `@spackbot help` or `@spackbot commands`|
 |pipelines| Ask spackbot to re-run a GitLab pipeline | `@spackbot (re-)run pipelines`|
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
-
+|packages| Spackbot will give you a friendly suggestion to open multiple PRs for changes to multiple packages | |
 
 ## Commands
 
@@ -87,6 +88,8 @@ Here is what the interaction looks like in a pull request comment.
 
 ## Help
 
+?> chat command
+
 If you forget how to interact with spackbot, you can hopefully remember how
 to ask him for help, which can be done in two ways:
 
@@ -99,6 +102,8 @@ to ask him for help, which can be done in two ways:
 For the commands above (and any command) capitalization does not matter.
 
 ## Pipelines
+
+?> chat command
 
 As part of the spack continuous integration, we run a set of pipelines on GitLab alongside
 GitHub actions. Sometimes this pipeline can fail to trigger, or we just want it to re-run.
@@ -117,9 +122,22 @@ send you a comment that links to it.
 
 ## Style
 
+?> automated interaction
+
 If your pull request fails style checks, Spackbot will tell you how to fix it:
 
 ![img/style.png](img/style.png)
 
 A future version of Spackbot will run a command to make fixes on your behalf,
 however this is still under development.
+
+## Packages
+
+?> automated interaction
+
+If Spackbot notices that you are opening a pull request with multiple packages,
+he will kindly suggest that you consider opening multiple pull requests:
+
+![img/multiple-packages.png](img/multiple-packages.png)
+
+This is good advice as it will make the pull requests easier to review.
