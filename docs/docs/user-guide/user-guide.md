@@ -37,7 +37,7 @@ with different events.
 |help| Ask for help from spackbot | `@spackbot help` or `@spackbot commands`|
 |pipelines| Ask spackbot to re-run a GitLab pipeline | `@spackbot (re-)run pipelines`|
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
-
+|fix style| The command to fix style will run `spack style --fix`| `@spackbot fix style`|
 
 ## Commands
 
@@ -121,5 +121,9 @@ If your pull request fails style checks, Spackbot will tell you how to fix it:
 
 ![img/style.png](img/style.png)
 
-A future version of Spackbot will run a command to make fixes on your behalf,
-however this is still under development.
+And if you have write access, you can then ask Spackbot to fix it on your behalf!
+
+
+```bash
+@spackbot fix style
+```

@@ -55,7 +55,7 @@ async def add_style_comments(event, gh, *args, session, **kwargs):
 
 
 @router.register("pull_request", action="opened")
-async def on_pull_request(event, gh, session):
+async def on_pull_request(event, gh, *args, session, **kwargs):
     """
     Respond to the pull request being opened
     """
@@ -84,6 +84,10 @@ async def add_comments(event, gh, *args, session, **kwargs):
     elif "@spackbot" in comment and "joke" in comment:
         logger.info(f"Responding to request for joke {comment}...")
         message = comments.tell_joke()
+
+    elif re.search("@spackbot fix style", comment, re.IGNORECASE):
+        logger.debug("Responding to request to fix style")
+        message = await handlers.fix_style(event, gh)
 
     # @spackbot commands OR @spackbot help
     elif re.search("@spackbot (commands|help)", comment, re.IGNORECASE):
