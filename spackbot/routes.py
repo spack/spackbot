@@ -90,6 +90,11 @@ async def add_comments(event, gh, *args, session, **kwargs):
         logger.debug("Responding to request for help commands.")
         message = comments.commands_message
 
+    # @spackbot maintainers or @spackbot request review
+    elif re.search("@spackbot (maintainers|request review)", comment, re.IGNORECASE):
+        logger.debug("Responding to request to assign maintainers for review.")
+        await handlers.add_reviewers(event, gh)
+
     # @spackbot run pipeline | @spackbot re-run pipeline
     elif re.search("@spackbot (re-)?run pipeline", comment, re.IGNORECASE):
         logger.info("Responding to request to re-run pipeline...")
