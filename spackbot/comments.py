@@ -42,6 +42,7 @@ You can interact with me in many ways!
 - `@spackbot hello`: say hello and get a friendly response back!
 - `@spackbot help` or `@spackbot commands`: see this message 
 - `@spackbot run pipeline` or `@spackbot re-run pipeline`: to request a new run of the GitLab CI pipeline 
+- `@spackbot maintainers` or `@spackbot request review`: to look for and assign reviewers for the pull request.
 
 I'll also help to label your pull request and assign reviewers!
 If you need help or see there might be an issue with me, open an issue [here](https://github.com/spack/spack-bot/issues)
