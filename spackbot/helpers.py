@@ -6,6 +6,7 @@
 
 from io import StringIO
 import contextlib
+import logging
 import os
 import requests
 import tempfile
@@ -16,6 +17,9 @@ from datetime import datetime
 """Shared function helpers that can be used across routes"
 """
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("spackbot")
+
 spack_develop_url = "https://github.com/spack/spack"
 spack_gitlab_url = "https://gitlab.spack.io"
 
@@ -24,8 +28,12 @@ gitlab_spack_project_url = "https://gitlab.spack.io/api/v4/projects/2"
 
 package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 
+# Bot name can be modified in the environment
+botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
+logging.info(f"bot name is {botname}")
+
 # Aliases for spackbot so spackbot doesn't respond to himself
-aliases = ["spack-bot", "spackbot", "spack-bot-develop"]
+aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
 alias_regex = "(%s)" % "|".join(aliases)
 
 

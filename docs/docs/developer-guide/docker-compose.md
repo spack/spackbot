@@ -72,6 +72,8 @@ Make sure to add these variables to your .env, specifically adding:
  - GITHUB_APP_REQUESTER is your GitHub account
  - GITHUB_WEBHOOK_SECRET also needs to be added to your app.
  - GITLAB_TOKEN is a Gitlab API token to interact with the GitLab API to re-run pipelines there.
+ - SPACKBOT_NAME: can be changed to alter the name of your robot. An `@` is recommended if you want to link pinging your bot with notifying some GitHub account.
+
 
 #### Credentials
 
