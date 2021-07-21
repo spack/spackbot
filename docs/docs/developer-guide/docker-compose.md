@@ -90,8 +90,7 @@ volumes:
   - ./id_spackbot.pub:/root/.ssh/id_rsa.pub
 ```
 
-If you can generate the credential, you can [follow instructions here](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) and then name it `id_spackbot` (to generate `id_spackbot` and `id_spackbot.pub`
-which is added to your GitHub.
+If you can generate the credential, you can [follow instructions here](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent). Name it `id_spackbot` when prompted. This will generate `id_spackbot` and `id_spackbot.pub`. You should add `id_spackbot.pub` to your bot's GitHub account.
 
 When you build and start containers, a message should print to confirm or deny that your credentials were found
 
