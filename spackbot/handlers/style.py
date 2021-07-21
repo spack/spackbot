@@ -105,9 +105,6 @@ async def fix_style(event, gh):
 
         # Save the message for the user
         res, err = helpers.run_command(spack, ["--color", "never", "style", "--fix"])
-        # If the branch is really old and there is no style command
-        if "Unknown command" in err:
-            return "It looks like your branch is too old to have spack style! Please update it and try again."
         message = comments.get_style_message(res)
 
         # Commit (allow for no changes)
