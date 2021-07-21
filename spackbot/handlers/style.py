@@ -9,6 +9,7 @@ from sh.contrib import git
 import requests
 import logging
 import os
+import sh
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,9 @@ async def fix_style(event, gh):
 
     # Get the username of the original committer
     user = pr["user"]["login"]
-    email = "%s@users.noreply.github.com" % user
+
+    # We need the user id if the user is before July 18. 2017
+    email = helpers.get_user_email(user)
 
     # We need to use the git url with ssh
     branch = pr["head"]["ref"]
@@ -77,6 +80,11 @@ async def fix_style(event, gh):
 
     # At this point, we can clone the repository and make the change
     with helpers.temp_dir() as cwd:
+
+        # Clone a fresh spack develop to use for spack style
+        git("clone", "--depth", "1", "https://github.com/spack/spack", "spack-develop")
+        spack = sh.Command(f"{cwd}/spack-develop/bin/spack")
+
         git("clone", "-b", branch, clone_url)
         os.chdir("spack")
         git("config", "user.name", user)
@@ -94,10 +102,6 @@ async def fix_style(event, gh):
 
             git("checkout", "--track", "upstream/develop")
             git("checkout", branch)
-
-        # Add newly cloned `spack` to PATH
-        os.environ["PATH"] = f"{cwd}/spack/bin:" + os.environ["PATH"]
-        from sh import spack
 
         # Save the message for the user
         res, err = helpers.run_command(spack, ["--color", "never", "style", "--fix"])

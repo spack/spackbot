@@ -7,8 +7,11 @@
 from io import StringIO
 import contextlib
 import os
+import requests
 import tempfile
 import gidgethub
+
+from datetime import datetime
 
 """Shared function helpers that can be used across routes"
 """
@@ -38,6 +41,20 @@ def temp_dir():
             yield temp_dir
         finally:
             os.chdir(pwd)
+
+
+def get_user_email(user):
+    """
+    Given a username, get the correct email based on creation date
+    """
+    response = requests.get("https://api.github.com/users/%s" % user).json()
+    created_at = datetime.strptime(response["created_at"].split("T", 1)[0], "%Y-%m-%d")
+    split = datetime.strptime("2017-07-18", "%Y-%m-%d")
+    if created_at > split:
+        email = "%s+%s@users.noreply.github.com" % (response["id"], user)
+    else:
+        email = "%s@users.noreply.github.com" % user
+    return email
 
 
 def run_command(control, cmd, ok_codes=None):
