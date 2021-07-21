@@ -38,7 +38,6 @@ You'll first need to create a  [Follow this link](https://github.com/settings/ap
  - **Webhook URL** enter your smee url
  - **Repo Permissions** You want to add:
    - Administration: read and write
-   - Contents: read and write
    - Discussions: read and write
    - Issues: read only
    - Pull Requests: read and write
@@ -113,7 +112,8 @@ write permission.
 
 **Important**  when you are testing, it must be the case that there is a checkbox
 for "maintainer can edit" on the opened PR. If you don't see this box or don't check it,
-spackbot will not be able to write to the repository.
+spackbot will not be able to write to the repository. You can read more about this
+[here](https://docs.github.com/en/github/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork).
 
 Keep reading for instructions to build and start containers.
 
