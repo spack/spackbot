@@ -6,6 +6,7 @@
 import logging
 import os
 import re
+import requests
 
 from sh.contrib import git
 from gidgethub import routing
@@ -153,9 +154,16 @@ async def add_reviewers(event, gh):
 
     If a package does not have any maintainers yet, request them.
     """
-    pull_request = event.data["pull_request"]
+    # If it's sent from a comment, the PR needs to be retrieved
+    if "pull_request" in event.data:
+        pull_request = event.data["pull_request"]
+        number = event.data["number"]
+    else:
+        pr_url = event.data["issue"]["pull_request"]["url"]
+        pull_request = requests.get(pr_url).json()
+        number = pull_request["number"]
+
     repository = event.data["repository"]
-    number = event.data["number"]
 
     logger.info(f"Looking for reviewers for PR #{number}...")
 
