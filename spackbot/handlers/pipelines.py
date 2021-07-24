@@ -41,7 +41,9 @@ async def run_pipeline(event, gh):
         logger.info(f"Author {author} is requesting a pipeline run.")
 
     # If they don't have write, we don't allow the command
-    elif not await helpers.found(gh.getitem(collaborators_url, {"collaborator": sender})):
+    elif not await helpers.found(
+        gh.getitem(collaborators_url, {"collaborator": sender})
+    ):
         logger.info(f"Not found: {sender}")
         return (
             "Sorry %s, I cannot do that for you. Only users with write can make this request!"
