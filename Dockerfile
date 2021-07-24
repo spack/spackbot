@@ -4,8 +4,9 @@ EXPOSE 8080
 
 COPY requirements.txt .
 COPY spackbot /app/spackbot
+COPY entrypoint.sh /entrypoint.sh
 
 RUN pip3 install -r requirements.txt
 
 ENV PYTHONPATH "${PYTHONPATH}:/app"
-CMD ["python3", "-m", "spackbot"]
+CMD ["/bin/bash", "/entrypoint.sh"]

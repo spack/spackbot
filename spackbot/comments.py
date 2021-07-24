@@ -5,6 +5,7 @@
 
 import random
 import requests
+import spackbot.helpers as helpers
 
 
 def tell_joke():
@@ -36,17 +37,51 @@ def say_hello():
     return random.choice(messages)
 
 
+def get_style_message(output):
+    """
+    Given a terminal output, wrap in a message
+    """
+    # The output is limited to what GitHub can store in comments, 65,536 4-byte unicode
+    # total rounded down -300 for text below
+    if len(output) >= 64700:
+        output = output[:64682] + "\n... truncated ..."
+
+    return (
+        """
+I was able to run `spack style --fix` for you!
+<details>
+<summary><b>spack style --fix</b></summary>  
+  
+```bash
+%s
+```    
+</details>
+Keep in mind that I cannot fix your flake8 or mypy errors, so if you have any you'll need to fix them and update the pull request."""
+        % output
+    )
+
+
 commands_message = """
 You can interact with me in many ways! 
 
-- `@spackbot hello`: say hello and get a friendly response back!
-- `@spackbot help` or `@spackbot commands`: see this message 
-- `@spackbot run pipeline` or `@spackbot re-run pipeline`: to request a new run of the GitLab CI pipeline 
-- `@spackbot maintainers` or `@spackbot request review`: to look for and assign reviewers for the pull request.
+- `%s hello`: say hello and get a friendly response back!
+- `%s help` or `%s commands`: see this message 
+- `%s run pipeline` or `%s re-run pipeline`: to request a new run of the GitLab CI pipeline 
+- `%s fix style` if you have write and would like me to run `spack style --fix` for you.
+- `%s maintainers` or `%s request review`: to look for and assign reviewers for the pull request.
 
 I'll also help to label your pull request and assign reviewers!
 If you need help or see there might be an issue with me, open an issue [here](https://github.com/spack/spack-bot/issues)
-"""
+""" % (
+    helpers.botname,
+    helpers.botname,
+    helpers.botname,
+    helpers.botname,
+    helpers.botname,
+    helpers.botname,
+    helpers.botname,
+    helpers.botname,
+)
 
 style_message = """
 It looks like you had an issue with style checks! To fix this, you can run:

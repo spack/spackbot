@@ -6,12 +6,19 @@
 
 from io import StringIO
 import contextlib
+import logging
 import os
+import requests
 import tempfile
 import gidgethub
 
+from datetime import datetime
+
 """Shared function helpers that can be used across routes"
 """
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("spackbot")
 
 spack_develop_url = "https://github.com/spack/spack"
 spack_gitlab_url = "https://gitlab.spack.io"
@@ -21,8 +28,12 @@ gitlab_spack_project_url = "https://gitlab.spack.io/api/v4/projects/2"
 
 package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 
+# Bot name can be modified in the environment
+botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
+logging.info(f"bot name is {botname}")
+
 # Aliases for spackbot so spackbot doesn't respond to himself
-aliases = ["spack-bot", "spackbot", "spack-bot-develop"]
+aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
 alias_regex = "(%s)" % "|".join(aliases)
 
 
@@ -38,6 +49,20 @@ def temp_dir():
             yield temp_dir
         finally:
             os.chdir(pwd)
+
+
+def get_user_email(user):
+    """
+    Given a username, get the correct email based on creation date
+    """
+    response = requests.get("https://api.github.com/users/%s" % user).json()
+    created_at = datetime.strptime(response["created_at"].split("T", 1)[0], "%Y-%m-%d")
+    split = datetime.strptime("2017-07-18", "%Y-%m-%d")
+    if created_at > split:
+        email = "%s+%s@users.noreply.github.com" % (response["id"], user)
+    else:
+        email = "%s@users.noreply.github.com" % user
+    return email
 
 
 def run_command(control, cmd, ok_codes=None):
