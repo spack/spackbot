@@ -62,12 +62,23 @@ or adding more labels for an extensive change to a package:
 
 ## Maintainers
 
-?> automated interaction
+?> automated interaction and chat command
 
 Spackbot is also looking out for packages! When you open a pull request and a package
 doesn't have a maintainer, spackbot will make suggestions.
 
 ![img/maintainers.png](img/maintainers.png)
+
+If for some reason you change the pull request or otherwise want to look for maintainers
+again, either of the following will work:
+
+```bash
+@spackbot maintainers
+@spackbot request review
+```
+
+![img/ask-for-maintainers.png](img/ask-for-maintainers.png)
+
 
 ## Say Hello
 
