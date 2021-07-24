@@ -145,9 +145,11 @@ async def add_reviewers(event, gh):
     if unmaintained_pkgs:
         # Ask for maintainers
         # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
+        unmaintained_pkgs = sorted(unmaintained_pkgs)
         comment_body = comments.no_maintainers_comment.format(
             author=pull_request["user"]["login"],
-            packages_without_maintainers="\n* ".join(sorted(unmaintained_pkgs)),
+            packages_without_maintainers="\n* ".join(unmaintained_pkgs),
+            first_package_without_maintainer=unmaintained_pkgs[0],
         )
         await gh.post(pull_request["comments_url"], {}, data={"body": comment_body})
 
