@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
-import os
 import re
 import requests
 
@@ -58,7 +57,7 @@ async def parse_maintainers_from_patch(gh, pull_request):
         pkg = re.search(r"/([^/]+)/package.py", filename).group(1)
 
         code = file["patch"]
-        arrays = re.findall("maintainers\s*=\s*\[[^\]]*\]", code)
+        arrays = re.findall("maintainers\s*=\s*\[[^\]]*\]", code)  # noqa
         for array in arrays:
             file_maintainers = re.findall("['\"][^'\"]*['\"]", array)
             for m in file_maintainers:
