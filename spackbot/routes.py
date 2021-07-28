@@ -95,7 +95,9 @@ async def add_comments(event, gh, *args, session, **kwargs):
         message = comments.commands_message
 
     # @spackbot maintainers or @spackbot request review
-    elif re.search("@spackbot (maintainers|request review)", comment, re.IGNORECASE):
+    elif re.search(
+        "%s (maintainers|request review)" % helpers.botname, comment, re.IGNORECASE
+    ):
         logger.debug("Responding to request to assign maintainers for review.")
         await handlers.add_reviewers(event, gh)
 

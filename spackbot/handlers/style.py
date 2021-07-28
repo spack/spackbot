@@ -82,7 +82,7 @@ async def fix_style(event, gh):
     with helpers.temp_dir() as cwd:
 
         # Clone a fresh spack develop to use for spack style
-        git("clone", "--depth", "1", "https://github.com/spack/spack", "spack-develop")
+        git("clone", "--depth", "1", "git@github.com:spack/spack", "spack-develop")
 
         spack = sh.Command(f"{cwd}/spack-develop/bin/spack")
 
