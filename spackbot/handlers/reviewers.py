@@ -8,6 +8,7 @@ import os
 import re
 import requests
 
+import sh
 from sh.contrib import git
 from gidgethub import routing
 from spackbot.helpers import found, spack_develop_url, package_path, temp_dir
@@ -89,9 +90,8 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
         # WARNING: If we run that, an attacker could run anything as this bot.
         git("clone", "--depth", "1", spack_develop_url)
 
-        # Add `spack` to PATH
-        os.environ["PATH"] = f"{cwd}/spack/bin:" + os.environ["PATH"]
-        from sh import spack
+        # Get spack executable
+        spack = sh.Command(f"{cwd}/spack/bin/spack")
 
         for package in packages:
             logger.info(f"Package: {package}")

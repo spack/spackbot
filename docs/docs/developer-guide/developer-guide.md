@@ -1,6 +1,7 @@
 # Developer's Guide
 
 ## Table of Contents
+
 - [Development with docker-compose](developer-guide/docker-compose.md) **recommended**
 - [Development with local Docker](developer-guide/docker.md)
 - [Installing the App](developer-guide/install.md)

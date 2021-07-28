@@ -18,6 +18,11 @@ services:
     # For development so restart updates server
     volumes:
 
+      # Required for spackbot to have permission to push
+      # comment this out if you can't generate
+      - ./id_spackbot:/root/.ssh/id_rsa
+      - ./id_spackbot.pub:/root/.ssh/id_rsa.pub
+
       # includes private key
       - ./spackbot:/app/spackbot
     env_file:
