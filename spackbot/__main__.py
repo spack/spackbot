@@ -38,7 +38,7 @@ async def main(request):
 
     # a representation of GitHub webhook event
     event = sansio.Event.from_http(request.headers, body, secret=WEBHOOK_SECRET)
-    logger.info("Received event %s" % event)
+    logger.info(f"Received event {event}")
 
     # get an installation token to make a GitHubAPI for API calls
     token = await authenticate_installation(event.data)

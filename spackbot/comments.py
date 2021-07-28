@@ -17,7 +17,7 @@ def tell_joke():
     )
     if response.status_code == 200:
         joke = response.json()[0]
-        return "> %s\n *%s*\n😄️" % (joke["setup"], joke["punchline"])
+        return f"> {joke['setup']}\n *{joke['punchline']}*\n😄️"
     return "I'm a little tired now for a joke, but hey, you're funny looking! 😄️"
 
 
@@ -46,44 +46,32 @@ def get_style_message(output):
     if len(output) >= 64700:
         output = output[:64682] + "\n... truncated ..."
 
-    return (
-        """
+    return f"""
 I was able to run `spack style --fix` for you!
 <details>
 <summary><b>spack style --fix</b></summary>  
   
 ```bash
-%s
+{output}
 ```    
 </details>
 Keep in mind that I cannot fix your flake8 or mypy errors, so if you have any you'll need to fix them and update the pull request.
 If I was able to push to your branch, if you make further changes you will need to pull from your updated branch before pushing again.
 """
-        % output
-    )
 
 
-commands_message = """
+commands_message = f"""
 You can interact with me in many ways! 
 
-- `%s hello`: say hello and get a friendly response back!
-- `%s help` or `%s commands`: see this message 
-- `%s run pipeline` or `%s re-run pipeline`: to request a new run of the GitLab CI pipeline 
-- `%s fix style` if you have write and would like me to run `spack style --fix` for you.
-- `%s maintainers` or `%s request review`: to look for and assign reviewers for the pull request.
+- `{helpers.botname} hello`: say hello and get a friendly response back!
+- `{helpers.botname} help` or `{helpers.botname} commands`: see this message 
+- `{helpers.botname} run pipeline` or `{helpers.botname} re-run pipeline`: to request a new run of the GitLab CI pipeline 
+- `{helpers.botname} fix style` if you have write and would like me to run `spack style --fix` for you.
+- `{helpers.botname} maintainers` or `{helpers.botname} request review`: to look for and assign reviewers for the pull request.
 
 I'll also help to label your pull request and assign reviewers!
 If you need help or see there might be an issue with me, open an issue [here](https://github.com/spack/spack-bot/issues)
-""" % (
-    helpers.botname,
-    helpers.botname,
-    helpers.botname,
-    helpers.botname,
-    helpers.botname,
-    helpers.botname,
-    helpers.botname,
-    helpers.botname,
-)
+"""
 
 style_message = """
 It looks like you had an issue with style checks! To fix this, you can run:
