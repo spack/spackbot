@@ -76,33 +76,30 @@ async def fix_style(event, gh):
     # We need to use the git url with ssh
     branch = pr["head"]["ref"]
     full_name = pr["head"]["repo"]["full_name"]
-    clone_url = "git@github.com:%s.git" % full_name
+    fork_url = "git@github.com:%s.git" % full_name
 
     # At this point, we can clone the repository and make the change
     with helpers.temp_dir() as cwd:
 
         # Clone a fresh spack develop to use for spack style
-        git("clone", "--depth", "1", "git@github.com:spack/spack", "spack-develop")
+        git("clone", helpers.spack_upstream, "spack-develop")
 
         spack = sh.Command(f"{cwd}/spack-develop/bin/spack")
 
-        git("clone", "-b", branch, clone_url)
+        # clone the develop repository to another folder for our PR
+        git("clone", "spack-develop", "spack")
+
         os.chdir("spack")
         git("config", "user.name", user)
         git("config", "user.email", email)
 
         # This will authenticate the push with the added ssh credentials
-        git("remote", "set-url", "origin", clone_url)
+        git("remote", "add", "upstream", helpers.spack_upstream)
+        git("remote", "set-url", "origin", fork_url)
 
-        # We need to add develop remote for this to work
-        git("remote", "add", "upstream", "https://github.com/spack/spack")
-        git("fetch", "upstream")
-
-        # This won't work if we are already on a develop branch
-        if branch != "develop":
-
-            git("checkout", "--track", "upstream/develop")
-            git("checkout", branch)
+        # we're on upstream/develop. Fetch and check out just the PR branch
+        git("fetch", "origin", f"{branch}:{branch}")
+        git("checkout", branch)
 
         # Save the message for the user
         res, err = helpers.run_command(spack, ["--color", "never", "style", "--fix"])

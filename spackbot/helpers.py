@@ -22,6 +22,7 @@ logger = logging.getLogger("spackbot")
 
 spack_develop_url = "https://github.com/spack/spack"
 spack_gitlab_url = "https://gitlab.spack.io"
+spack_upstream = "git@github.com:spack/spack"
 
 # Spack has project ID 2
 gitlab_spack_project_url = "https://gitlab.spack.io/api/v4/projects/2"
