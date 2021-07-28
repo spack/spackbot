@@ -56,7 +56,9 @@ I was able to run `spack style --fix` for you!
 %s
 ```    
 </details>
-Keep in mind that I cannot fix your flake8 or mypy errors, so if you have any you'll need to fix them and update the pull request."""
+Keep in mind that I cannot fix your flake8 or mypy errors, so if you have any you'll need to fix them and update the pull request.
+If I was able to push to your branch, if you make further changes you will need to pull from your updated branch before pushing again.
+"""
         % output
     )
 
