@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
-import requests
 import os
 
 from spackbot.helpers import found, gitlab_spack_project_url, spack_gitlab_url
@@ -28,8 +27,7 @@ async def run_pipeline(event, gh):
     number = pr_url.split("/")[-1]
 
     # We need the pull request branch
-    response = requests.get(pr_url)
-    pr = response.json()
+    pr = await gh.getitem(pr_url)
 
     # Get the sender of the PR - do they have write?
     sender = event.data["sender"]["login"]
@@ -52,8 +50,8 @@ async def run_pipeline(event, gh):
 
     url = f"{gitlab_spack_project_url}/pipeline?ref={branch}"
     headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
-    response = requests.post(url, headers=headers)
-    result = response.json()
+
+    result = await gh.post(url, headers)
     if "detailed_status" in result and "details_path" in result["detailed_status"]:
         url = f"{spack_gitlab_url}/{result['detailed_status']['details_path']}"
         return f"I've started that [pipeline]({url}) for you!"

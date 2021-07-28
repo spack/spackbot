@@ -83,7 +83,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
     # Hey @spackbot tell me a joke!
     elif helpers.botname in comment and "joke" in comment:
         logger.info(f"Responding to request for joke {comment}...")
-        message = comments.tell_joke()
+        message = await comments.tell_joke(gh)
 
     elif re.search(f"{helpers.botname} fix style", comment, re.IGNORECASE):
         logger.debug("Responding to request to fix style")

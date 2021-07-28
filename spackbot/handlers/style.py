@@ -6,7 +6,6 @@
 import spackbot.comments as comments
 import spackbot.helpers as helpers
 from sh.contrib import git
-import requests
 import logging
 import os
 import sh
@@ -46,8 +45,7 @@ async def fix_style(event, gh):
     from anyone with write access to the repository, we commit, and we commit
     under the identity of the original person that opened the PR.
     """
-    response = requests.get(event.data["issue"]["pull_request"]["url"])
-    pr = response.json()
+    pr = await gh.getitem(event.data["issue"]["pull_request"]["url"])
 
     # Get the sender of the PR - do they have write?
     sender = event.data["sender"]["login"]
@@ -67,7 +65,7 @@ async def fix_style(event, gh):
     user = pr["user"]["login"]
 
     # We need the user id if the user is before July 18. 2017
-    email = helpers.get_user_email(user)
+    email = await helpers.get_user_email(gh, user)
 
     # We need to use the git url with ssh
     branch = pr["head"]["ref"]

@@ -8,7 +8,6 @@ from io import StringIO
 import contextlib
 import logging
 import os
-import requests
 import tempfile
 import gidgethub
 
@@ -52,11 +51,11 @@ def temp_dir():
             os.chdir(pwd)
 
 
-def get_user_email(user):
+async def get_user_email(gh, user):
     """
     Given a username, get the correct email based on creation date
     """
-    response = requests.get(f"https://api.github.com/users/{user}").json()
+    response = await gh.getitem(f"https://api.github.com/users/{user}")
     created_at = datetime.strptime(response["created_at"].split("T", 1)[0], "%Y-%m-%d")
     split = datetime.strptime("2017-07-18", "%Y-%m-%d")
     if created_at > split:
