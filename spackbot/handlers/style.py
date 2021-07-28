@@ -116,7 +116,7 @@ async def fix_style(event, gh):
         # Finally, try to push, update the message if permission not allowed
         try:
             git("push", "origin", branch)
-        except:
+        except Exception:
             message += "\n\nBut it looks like I'm not able to push to your branch. 😭️ Did you check maintainer can edit when you opened the PR?"
 
     return message

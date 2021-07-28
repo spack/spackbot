@@ -49,11 +49,11 @@ def get_style_message(output):
     return f"""
 I was able to run `spack style --fix` for you!
 <details>
-<summary><b>spack style --fix</b></summary>  
-  
+<summary><b>spack style --fix</b></summary>
+
 ```bash
 {output}
-```    
+```
 </details>
 Keep in mind that I cannot fix your flake8 or mypy errors, so if you have any you'll need to fix them and update the pull request.
 If I was able to push to your branch, if you make further changes you will need to pull from your updated branch before pushing again.
@@ -61,11 +61,11 @@ If I was able to push to your branch, if you make further changes you will need 
 
 
 commands_message = f"""
-You can interact with me in many ways! 
+You can interact with me in many ways!
 
 - `{helpers.botname} hello`: say hello and get a friendly response back!
-- `{helpers.botname} help` or `{helpers.botname} commands`: see this message 
-- `{helpers.botname} run pipeline` or `{helpers.botname} re-run pipeline`: to request a new run of the GitLab CI pipeline 
+- `{helpers.botname} help` or `{helpers.botname} commands`: see this message
+- `{helpers.botname} run pipeline` or `{helpers.botname} re-run pipeline`: to request a new run of the GitLab CI pipeline
 - `{helpers.botname} fix style` if you have write and would like me to run `spack style --fix` for you.
 - `{helpers.botname} maintainers` or `{helpers.botname} request review`: to look for and assign reviewers for the pull request.
 
