@@ -5,6 +5,7 @@
 
 import random
 import requests
+import spackbot.helpers as helpers
 
 
 def tell_joke():
@@ -16,7 +17,7 @@ def tell_joke():
     )
     if response.status_code == 200:
         joke = response.json()[0]
-        return "> %s\n *%s*\n😄️" % (joke["setup"], joke["punchline"])
+        return f"> {joke['setup']}\n *{joke['punchline']}*\n😄️"
     return "I'm a little tired now for a joke, but hey, you're funny looking! 😄️"
 
 
@@ -36,13 +37,37 @@ def say_hello():
     return random.choice(messages)
 
 
-commands_message = """
-You can interact with me in many ways! 
+def get_style_message(output):
+    """
+    Given a terminal output, wrap in a message
+    """
+    # The output is limited to what GitHub can store in comments, 65,536 4-byte unicode
+    # total rounded down -300 for text below
+    if len(output) >= 64700:
+        output = output[:64682] + "\n... truncated ..."
 
-- `@spackbot hello`: say hello and get a friendly response back!
-- `@spackbot help` or `@spackbot commands`: see this message 
-- `@spackbot run pipeline` or `@spackbot re-run pipeline`: to request a new run of the GitLab CI pipeline 
-- `@spackbot maintainers` or `@spackbot request review`: to look for and assign reviewers for the pull request.
+    return f"""
+I was able to run `spack style --fix` for you!
+<details>
+<summary><b>spack style --fix</b></summary>
+
+```bash
+{output}
+```
+</details>
+Keep in mind that I cannot fix your flake8 or mypy errors, so if you have any you'll need to fix them and update the pull request.
+If I was able to push to your branch, if you make further changes you will need to pull from your updated branch before pushing again.
+"""
+
+
+commands_message = f"""
+You can interact with me in many ways!
+
+- `{helpers.botname} hello`: say hello and get a friendly response back!
+- `{helpers.botname} help` or `{helpers.botname} commands`: see this message
+- `{helpers.botname} run pipeline` or `{helpers.botname} re-run pipeline`: to request a new run of the GitLab CI pipeline
+- `{helpers.botname} fix style` if you have write and would like me to run `spack style --fix` for you.
+- `{helpers.botname} maintainers` or `{helpers.botname} request review`: to look for and assign reviewers for the pull request.
 
 I'll also help to label your pull request and assign reviewers!
 If you need help or see there might be an issue with me, open an issue [here](https://github.com/spack/spack-bot/issues)
@@ -95,7 +120,7 @@ Are you interested in adopting any of these package(s)? If so, simply add the fo
 If not, could you contact the developers of this package and see if they are interested? You can quickly see who has worked on a package with `spack blame`:
 
 ```bash
-$ spack blame var/spack/repos/builtin/packages/zlib/package.py
+$ spack blame {first_package_without_maintainer}
 ```
 Thank you for your help! Please don't add maintainers without their consent.
 

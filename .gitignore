@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 .env
 *.pem
+id_spackbot*
 
 # C extensions
 *.so

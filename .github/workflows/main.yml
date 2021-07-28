@@ -1,0 +1,27 @@
+name: SpackBot CI
+
+on:
+  pull_request: []
+
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check formatting
+        run: |
+          export PATH="/usr/share/miniconda/bin:$PATH"
+          pip install black flake8
+          black --check --diff spackbot
+          flake8 spackbot
+
+      # Likely only maintainers will work on Spackbot
+      - name: Comment Pull Request
+        if: github.event_name == 'pull_request' && failure()
+        uses: marocchino/sticky-pull-request-comment@v1.1.0
+        with:
+          message: 'Please format your code with [black](https://black.readthedocs.io): `black spackbot`.'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      # TODO add tests here?

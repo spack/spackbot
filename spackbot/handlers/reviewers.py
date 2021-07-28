@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
-import os
 import re
 import requests
 
+import sh
 from sh.contrib import git
 from gidgethub import routing
 import spackbot.helpers as helpers
@@ -33,7 +33,7 @@ async def parse_maintainers_from_patch(gh, pull_request):
         pkg = re.search(r"/([^/]+)/package.py", filename).group(1)
 
         code = file["patch"]
-        arrays = re.findall("maintainers\s*=\s*\[[^\]]*\]", code)
+        arrays = re.findall("maintainers\s*=\s*\[[^\]]*\]", code)  # noqa
         for array in arrays:
             file_maintainers = re.findall("['\"][^'\"]*['\"]", array)
             for m in file_maintainers:
@@ -66,9 +66,8 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
         # WARNING: If we run that, an attacker could run anything as this bot.
         git("clone", "--depth", "1", helpers.spack_develop_url)
 
-        # Add `spack` to PATH
-        os.environ["PATH"] = f"{cwd}/spack/bin:" + os.environ["PATH"]
-        from sh import spack
+        # Get spack executable
+        spack = sh.Command(f"{cwd}/spack/bin/spack")
 
         for package in packages:
             logger.info(f"Package: {package}")
@@ -182,9 +181,11 @@ async def add_reviewers(event, gh):
     if unmaintained_pkgs:
         # Ask for maintainers
         # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
+        unmaintained_pkgs = sorted(unmaintained_pkgs)
         comment_body = comments.no_maintainers_comment.format(
             author=pull_request["user"]["login"],
-            packages_without_maintainers="\n* ".join(sorted(unmaintained_pkgs)),
+            packages_without_maintainers="\n* ".join(unmaintained_pkgs),
+            first_package_without_maintainer=unmaintained_pkgs[0],
         )
         await gh.post(pull_request["comments_url"], {}, data={"body": comment_body})
 

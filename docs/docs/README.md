@@ -47,7 +47,7 @@ I'm a hard working robot, so I'll also be helping on the following things withou
 
 ### Style
 
-If your style checks fail (meaning import order, linting, etc.) I'll give you a heads up, and give you a command to run to fix them automatically. I'll soon be able to fix them on your behalf (this feature is not finished yet!)
+If your style checks fail (meaning import order, linting, etc.) I'll give you a heads up, and give you a command to run to fix them automatically. If you have write access you can then ask me to fix the style for you.
 
 ### Labels
 

@@ -41,6 +41,7 @@ with different events.
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
 |packages| Spackbot will give you a friendly suggestion to open multiple PRs for changes to multiple packages | |
 |issues| If you open an issue that references a package in the title, spackbot will ping maintainers | |
+|fix style| The command to fix style will run `spack style --fix`| `@spackbot fix style`|
 
 ## Commands
 
@@ -142,9 +143,6 @@ If your pull request fails style checks, Spackbot will tell you how to fix it:
 
 ![img/style.png](img/style.png)
 
-A future version of Spackbot will run a command to make fixes on your behalf,
-however this is still under development.
-
 ## Packages
 
 ?> automated interaction
@@ -164,3 +162,9 @@ If you open an issue and mention a known package in the title, Spackbot
 will ping maintainers on the package to ask for help.
 
 ![img/issue-ping.png](img/issue-ping.png)
+
+And if you have write access, you can then ask Spackbot to fix it on your behalf!
+
+```bash
+@spackbot fix style
+```
