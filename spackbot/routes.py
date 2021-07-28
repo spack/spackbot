@@ -76,7 +76,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
 
     # @spackbot hello
     message = None
-    if re.search("%s hello" % helpers.botname, comment, re.IGNORECASE):
+    if re.search(f"{helpers.botname} hello", comment, re.IGNORECASE):
         logger.info(f"Responding to hello message {comment}...")
         message = comments.say_hello()
 
@@ -85,24 +85,24 @@ async def add_comments(event, gh, *args, session, **kwargs):
         logger.info(f"Responding to request for joke {comment}...")
         message = comments.tell_joke()
 
-    elif re.search("%s fix style" % helpers.botname, comment, re.IGNORECASE):
+    elif re.search(f"{helpers.botname} fix style", comment, re.IGNORECASE):
         logger.debug("Responding to request to fix style")
         message = await handlers.fix_style(event, gh)
 
     # @spackbot commands OR @spackbot help
-    elif re.search("%s (commands|help)" % helpers.botname, comment, re.IGNORECASE):
+    elif re.search(f"{helpers.botname} (commands|help)", comment, re.IGNORECASE):
         logger.debug("Responding to request for help commands.")
         message = comments.commands_message
 
     # @spackbot maintainers or @spackbot request review
     elif re.search(
-        "%s (maintainers|request review)" % helpers.botname, comment, re.IGNORECASE
+        f"{helpers.botname} (maintainers|request review)", comment, re.IGNORECASE
     ):
         logger.debug("Responding to request to assign maintainers for review.")
         await handlers.add_reviewers(event, gh)
 
     # @spackbot run pipeline | @spackbot re-run pipeline
-    elif re.search("%s (re-)?run pipeline" % helpers.botname, comment, re.IGNORECASE):
+    elif re.search(f"{helpers.botname} (re-)?run pipeline", comment, re.IGNORECASE):
         logger.info("Responding to request to re-run pipeline...")
         message = await handlers.run_pipeline(event, gh)
 

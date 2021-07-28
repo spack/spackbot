@@ -26,9 +26,8 @@ async def style_comment(event, gh):
         if repository in pr["url"]:
 
             number = pr["url"].split("/")[-1]
-            comments_url = "https://api.github.com/repos/%s/issues/%s/comments" % (
-                repository,
-                number,
+            comments_url = (
+                f"https://api.github.com/repos/{repository}/issues/{number}/comments"
             )
             await gh.post(comments_url, {}, data={"body": comments.style_message})
 
@@ -58,10 +57,7 @@ async def fix_style(event, gh):
     # If they don't have write, we don't allow the command
     if not await helpers.found(gh.getitem(collaborators_url, {"collaborator": sender})):
         logger.info(f"Not found: {sender}")
-        return (
-            "Sorry %s, I cannot do that for you. Only users with write can make this request!"
-            % sender
-        )
+        return f"Sorry {sender}, I cannot do that for you. Only users with write can make this request!"
 
     # Tell the user the style fix is going to take a minute or two
     message = "Let me see if I can fix that for you! This might take a moment..."
@@ -76,7 +72,7 @@ async def fix_style(event, gh):
     # We need to use the git url with ssh
     branch = pr["head"]["ref"]
     full_name = pr["head"]["repo"]["full_name"]
-    fork_url = "git@github.com:%s.git" % full_name
+    fork_url = f"git@github.com:{full_name}.git"
 
     # At this point, we can clone the repository and make the change
     with helpers.temp_dir() as cwd:
@@ -108,7 +104,7 @@ async def fix_style(event, gh):
         # Commit (allow for no changes)
         res, err = helpers.run_command(
             git,
-            ["commit", "-a", "-m", "[spackbot] updating style on behalf of %s" % user],
+            ["commit", "-a", "-m", f"[spackbot] updating style on behalf of {user}"],
         )
 
         # Continue differently if the branch is up to date or not
