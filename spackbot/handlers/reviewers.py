@@ -5,7 +5,6 @@
 
 import logging
 import re
-import requests
 
 import sh
 from sh.contrib import git
@@ -130,7 +129,7 @@ async def add_reviewers(event, gh):
         number = event.data["number"]
     else:
         pr_url = event.data["issue"]["pull_request"]["url"]
-        pull_request = requests.get(pr_url).json()
+        pull_request = await gh.getitem(pr_url)
         number = pull_request["number"]
 
     repository = event.data["repository"]
