@@ -12,6 +12,7 @@ import os
 import re
 import tempfile
 
+from gidgethub import aiohttp
 from datetime import datetime
 
 """Shared function helpers that can be used across routes"
@@ -38,19 +39,18 @@ aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
 alias_regex = "(%s)" % "|".join(aliases)
 
 
-def list_packages():
+async def list_packages():
     """
     Get a list of package names
     """
-    packages = []
-    response = requests.get("https://spack.github.io/packages/data/packages.json")
-    if response.status_code == 200:
-        packages = [x.lower() for x in response.json()]
-    else:
-        logger.warning(
-            "Issue retrieving package list! Assigning maintainers to PRs might not work"
-        )
-    return packages
+    # Don't provide endpoint with credentials!
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            "https://spack.github.io/packages/data/packages.json"
+        ) as response:
+            response = await response.json()
+
+    return [x.lower() for x in response]
 
 
 async def changed_packages(gh, pull_request):
@@ -91,11 +91,11 @@ def temp_dir():
             os.chdir(pwd)
 
 
-def get_user_email(user):
+async def get_user_email(gh, user):
     """
     Given a username, get the correct email based on creation date
     """
-    response = requests.get(f"https://api.github.com/users/{user}").json()
+    response = await gh.getitem(f"https://api.github.com/users/{user}")
     created_at = datetime.strptime(response["created_at"].split("T", 1)[0], "%Y-%m-%d")
     split = datetime.strptime("2017-07-18", "%Y-%m-%d")
     if created_at > split:

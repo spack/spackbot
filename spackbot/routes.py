@@ -28,6 +28,11 @@ class SpackbotRouter(routing.Router):
 
     async def dispatch(self, event: sansio.Event, *args: Any, **kwargs: Any) -> None:
         """Dispatch an event to all registered function(s)."""
+
+        # if we haven't retrieved package list yet, do so
+        if not hasattr(self, "packages"):
+            self.packages = await helpers.list_packages()
+
         # for all endpoints, spackbot should not respond to himself!
         if "comment" in event.data and re.search(
             helpers.alias_regex, event.data["comment"]["user"]["login"]
@@ -40,7 +45,6 @@ class SpackbotRouter(routing.Router):
 
 
 router = SpackbotRouter()
-router.packages = helpers.list_packages()
 
 
 @router.register("check_run", action="completed")
@@ -95,7 +99,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
     # Hey @spackbot tell me a joke!
     elif helpers.botname in comment and "joke" in comment:
         logger.info(f"Responding to request for joke {comment}...")
-        message = comments.tell_joke()
+        message = await comments.tell_joke(gh)
 
     elif re.search(f"{helpers.botname} fix style", comment, re.IGNORECASE):
         logger.debug("Responding to request to fix style")

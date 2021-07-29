@@ -4,12 +4,11 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
+import os
 import re
-import requests
 
 import sh
 from sh.contrib import git
-from gidgethub import routing
 import spackbot.helpers as helpers
 import spackbot.comments as comments
 
@@ -159,7 +158,7 @@ async def add_reviewers(event, gh):
         number = event.data["number"]
     else:
         pr_url = event.data["issue"]["pull_request"]["url"]
-        pull_request = requests.get(pr_url).json()
+        pull_request = await gh.getitem(pr_url)
         number = pull_request["number"]
 
     repository = event.data["repository"]

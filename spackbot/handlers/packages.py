@@ -4,10 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
-import os
-import re
 
-from sh.contrib import git
 from gidgethub import routing
 import spackbot.helpers as helpers
 import spackbot.comments as comments

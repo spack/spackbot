@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
-import requests
 import os
 import spackbot.helpers as helpers
+
+from gidgethub import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,7 @@ async def run_pipeline(event, gh):
     number = pr_url.split("/")[-1]
 
     # We need the pull request branch
-    response = requests.get(pr_url)
-    pr = response.json()
+    pr = await gh.getitem(pr_url)
 
     # Get the sender of the PR - do they have write?
     sender = event.data["sender"]["login"]
@@ -51,10 +51,14 @@ async def run_pipeline(event, gh):
     branch = pr["head"]["ref"]
     branch = f"github/pr{number}_{branch}"
 
-    url = f"{gitlab_spack_project_url}/pipeline?ref={branch}"
+    url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
     headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
-    response = requests.post(url, headers=headers)
-    result = response.json()
+
+    # Don't provide GitHub credentials to GitLab!
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers) as response:
+            result = await response.json()
+
     if "detailed_status" in result and "details_path" in result["detailed_status"]:
         url = f"{helpers.spack_gitlab_url}/{result['detailed_status']['details_path']}"
         return f"I've started that [pipeline]({url}) for you!"

@@ -4,21 +4,18 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import random
-import requests
 import spackbot.helpers as helpers
 
 
-def tell_joke():
+async def tell_joke(gh):
     """
     Tell a joke to ease the PR tension!
     """
-    response = requests.get(
+    joke = await gh.getitem(
         "https://official-joke-api.appspot.com/jokes/programming/random"
     )
-    if response.status_code == 200:
-        joke = response.json()[0]
-        return f"> {joke['setup']}\n *{joke['punchline']}*\n😄️"
-    return "I'm a little tired now for a joke, but hey, you're funny looking! 😄️"
+    joke = joke[0]
+    return f"> {joke['setup']}\n *{joke['punchline']}*\n😄️"
 
 
 def say_hello():
