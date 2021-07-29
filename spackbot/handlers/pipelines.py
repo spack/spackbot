@@ -6,6 +6,8 @@
 import logging
 import os
 
+from gidgethub import aiohttp
+
 from spackbot.helpers import found, gitlab_spack_project_url, spack_gitlab_url
 
 logger = logging.getLogger(__name__)
@@ -51,7 +53,11 @@ async def run_pipeline(event, gh):
     url = f"{gitlab_spack_project_url}/pipeline?ref={branch}"
     headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 
-    result = await gh.post(url, headers)
+    # Don't provide GitHub credentials to GitLab!
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers) as response:
+            result = await response.json()
+
     if "detailed_status" in result and "details_path" in result["detailed_status"]:
         url = f"{spack_gitlab_url}/{result['detailed_status']['details_path']}"
         return f"I've started that [pipeline]({url}) for you!"
