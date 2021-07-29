@@ -83,8 +83,11 @@ label_patterns = {
         "status": r"^added$",
     },
     "commands": {
-        "filename": r"^lib/spack/spack/cmd/[^/]+.py$",
-        "status": r"^modified$",
+        "filename": [
+            r"^lib/spack/spack/cmd/[^/]+.py$",
+            r"^lib/spack/spack/test/cmd/[^/]+.py$",
+            r"^lib/spack/spack/test/(cmd_extension|commands).py$",
+        ],
     },
     "compilers": {"filename": r"^lib/spack/spack/compiler"},
     "directives": {"filename": r"^lib/spack/spack/directives"},
