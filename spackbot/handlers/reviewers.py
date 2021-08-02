@@ -132,7 +132,7 @@ async def add_issue_maintainers(event, gh, package_list):
                         ["@%s," % m for m in found_maintainers]
                     )
                     messages.append(
-                        "- Hey %s, it looks like you might know about the package %s. Can you help with this issue?"
+                        "- Hey %s, it looks like you might know about the %s package. Can you help with this issue?"
                         % (found_maintainers, package)
                     )
 
