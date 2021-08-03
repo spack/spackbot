@@ -102,6 +102,9 @@ async def add_issue_maintainers(event, gh, package_list):
     # Add extra space to end of title so we catch matches at end
     title = event.data["issue"]["title"].lower() + " "
 
+    # Replace special characters with spaces
+    title = re.sub("[-!#%^*(){}:_&$@\[\]]+", " ", title)
+
     # Does the title have a known package (must have space before and after)
     package_regex = "( %s )" % " | ".join(package_list)
     packages = re.findall(package_regex, title)
