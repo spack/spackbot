@@ -99,11 +99,11 @@ async def add_issue_maintainers(event, gh, package_list):
     """
     Assign maintainers of packages based on issue title.
     """
-    # Add extra space to end of title so we catch matches at end
-    title = event.data["issue"]["title"].lower() + " "
+    # Add extra space to start and end of title so we catch matches at ends
+    title = " " + event.data["issue"]["title"].lower() + " "
 
     # Replace special characters with spaces
-    title = re.sub("[-!#%^*(){}:_&$@\[\]]+", " ", title)  # noqa
+    title = re.sub("[!#%^*(){}:_&$+@\/\[\]]+", " ", title)  # noqa
 
     # Does the title have a known package (must have space before and after)
     package_regex = "( %s )" % " | ".join(package_list)
