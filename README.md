@@ -21,7 +21,7 @@ excellent
 
 Want to learn more? Read the
 
-⭐️ [Spackbot Documentation](https://spack.github.io/spack-bot) ⭐️
+⭐️ [Spackbot Documentation](https://spack.github.io/spackbot) ⭐️
 
 ## License
 
