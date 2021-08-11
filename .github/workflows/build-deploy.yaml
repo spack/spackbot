@@ -12,19 +12,25 @@ on:
 jobs:
   deploy-test-containers:
     runs-on: ubuntu-latest
-    name: Build Spackbot Container
+    strategy:
+      fail-fast: false
+      # matrix: [tag, path to Dockerfile, label]
+      matrix:
+        dockerfile: [[spack-bot, ./Dockerfile, Spackbot],
+                     [spackbot-workers, ./workers/Dockerfile, "Spackbot Workers"]]
+    name: Build ${{matrix.dockerfile[2]}} Container
     steps:
       - name: Checkout
         uses: actions/checkout@v2        
 
       - name: Build and Run Test Container
         run: |
-            docker build -t ghcr.io/spack/spack-bot:latest .
-            docker tag ghcr.io/spack/spack-bot:latest ghcr.io/spack/spack-bot:${GITHUB_SHA::8} 
+            docker build -f ${{matrix.dockerfile[1]}} -t ghcr.io/spack/${{matrix.dockerfile[0]}}:latest .
+            docker tag ghcr.io/spack/${{matrix.dockerfile[0]}}:latest ghcr.io/spack/${{matrix.dockerfile[0]}}:${GITHUB_SHA::8}
 
       - name: Login and Deploy Test Container
         if: (github.event_name != 'pull_request')
         run: |
             docker images
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
-            docker push --all-tags ghcr.io/spack/spack-bot
+            docker push --all-tags ghcr.io/spack/${{matrix.dockerfile[0]}}

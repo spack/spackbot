@@ -1,0 +1,4 @@
+aiohttp
+boto3
+gidgethub
+rq

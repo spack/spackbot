@@ -62,6 +62,14 @@ async def on_pull_request(event, gh, *args, session, **kwargs):
     await handlers.add_reviewers(event, gh)
 
 
+@router.register("pull_request", action="closed")
+async def on_closed_pull_request(event, gh, *args, session, **kwargs):
+    """
+    Respond to the pull request closed
+    """
+    await handlers.graduate_pr_binaries(event, gh)
+
+
 @router.register("issue_comment", action="created")
 async def add_comments(event, gh, *args, session, **kwargs):
     """
