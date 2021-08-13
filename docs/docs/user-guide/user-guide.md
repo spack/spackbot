@@ -40,7 +40,6 @@ with different events.
 |pipelines| Ask spackbot to re-run a GitLab pipeline | `@spackbot (re-)run pipelines`|
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
 |packages| Spackbot will give you a friendly suggestion to open multiple PRs for changes to multiple packages | |
-|issues| If you open an issue that references a package in the title, spackbot will ping maintainers | |
 |fix style| The command to fix style will run `spack style --fix`| `@spackbot fix style`|
 
 ## Commands
