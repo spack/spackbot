@@ -143,6 +143,12 @@ If your pull request fails style checks, Spackbot will tell you how to fix it:
 
 ![img/style.png](img/style.png)
 
+And if you have write access, you can then ask Spackbot to fix it on your behalf!
+
+```bash
+@spackbot fix style
+```
+
 ## Packages
 
 ?> automated interaction
@@ -153,18 +159,3 @@ he will kindly suggest that you consider opening multiple pull requests:
 ![img/multiple-packages.png](img/multiple-packages.png)
 
 This is good advice as it will make the pull requests easier to review.
-
-## Issues
-
-?> automated interaction
-
-If you open an issue and mention a known package in the title, Spackbot
-will ping maintainers on the package to ask for help.
-
-![img/issue-ping.png](img/issue-ping.png)
-
-And if you have write access, you can then ask Spackbot to fix it on your behalf!
-
-```bash
-@spackbot fix style
-```

@@ -98,6 +98,11 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
 async def add_issue_maintainers(event, gh, package_list):
     """
     Assign maintainers of packages based on issue title.
+
+    **Important** this handler is currently not in use, but the logic
+    is kept here to preserve for the future. We can edit the issue template
+    to explicitly name a list of one or more packages, and then use that
+    instead of parsing the title, as we do here.
     """
     # Add extra space to start and end of title so we catch matches at ends
     title = " " + event.data["issue"]["title"].lower() + " "

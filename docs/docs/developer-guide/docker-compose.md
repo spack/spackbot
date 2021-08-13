@@ -39,7 +39,7 @@ You'll first need to create a  [Follow this link](https://github.com/settings/ap
  - **Repo Permissions** You want to add:
    - Administration: read and write
    - Discussions: read and write
-   - Issues: read and write
+   - Issues: read only
    - Pull Requests: read and write
    - checks: read only
    - deployments: read only
@@ -48,7 +48,6 @@ You'll first need to create a  [Follow this link](https://github.com/settings/ap
  - **User Permissions** none
  - **Subscribe to events**:
    - issue comment
-   - issues
    - pull requests
    - pull request review comment
    - status

@@ -70,14 +70,6 @@ async def on_pull_request(event, gh, *args, session, **kwargs):
     await handlers.add_reviewers(event, gh)
 
 
-@router.register("issues", action="created")
-async def on_issue_comments(event, gh, *args, session, **kwargs):
-    """
-    Receive issue comments
-    """
-    await handlers.add_issue_maintainers(event, gh, router.packages)
-
-
 @router.register("issue_comment", action="created")
 async def add_comments(event, gh, *args, session, **kwargs):
     """
