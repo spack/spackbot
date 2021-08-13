@@ -4,44 +4,20 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import logging
+import os
 import re
 
 import sh
 from sh.contrib import git
-from gidgethub import routing
-from spackbot.helpers import found, spack_develop_url, package_path, temp_dir
+import spackbot.helpers as helpers
 import spackbot.comments as comments
 
 logger = logging.getLogger(__name__)
-router = routing.Router()
-
-
-async def changed_packages(gh, pull_request):
-    """Return an array of packages that were modified by a PR.
-
-    Ignore deleted packages, since we can no longer query them for
-    maintainers.
-
-    """
-    # see which files were modified
-    packages = []
-    async for f in gh.getiter(pull_request["url"] + "/files"):
-        filename = f["filename"]
-        status = f["status"]
-
-        if status == "removed":
-            continue
-
-        match = re.match(package_path, filename)
-        if not match:
-            continue
-        packages.append(match.group(1))
-
-    return packages
 
 
 async def parse_maintainers_from_patch(gh, pull_request):
-    """Get any new or removed maintainers from the patch data in the PR.
+    """
+    Get any new or removed maintainers from the patch data in the PR.
 
     We parse this from the patch because running the spack from the PR as this
     bot is unsafe; the bot is privileged and we do not trust code from PRs.
@@ -66,7 +42,8 @@ async def parse_maintainers_from_patch(gh, pull_request):
 
 
 async def find_maintainers(gh, packages, repository, pull_request, number):
-    """Return an array of packages with maintainers, an array of packages
+    """
+    Return an array of packages with maintainers, an array of packages
     without maintainers, and a set of maintainers.
 
     Ignore the author of the PR, as they don't need to review their own PR.
@@ -77,16 +54,16 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
     with_maintainers = []
     without_maintainers = []
 
-    # parse any added/removed maintainers from the PR. Do NOT run the spack from the PR
+    # parse any added/removed maintainers from the PR. Do NOT run spack from the PR
     patch_maintainers = await parse_maintainers_from_patch(gh, pull_request)
     logger.info(f"Maintainers from patch: {patch_maintainers}")
 
     all_maintainers = set()
-    with temp_dir() as cwd:
+    with helpers.temp_dir() as cwd:
         # Clone spack develop (shallow clone for speed)
         # WARNING: We CANNOT run spack from the PR, as it is untrusted code.
         # WARNING: If we run that, an attacker could run anything as this bot.
-        git("clone", "--depth", "1", spack_develop_url)
+        git("clone", "--depth", "1", helpers.spack_develop_url)
 
         # Get spack executable
         spack = sh.Command(f"{cwd}/spack/bin/spack")
@@ -118,8 +95,68 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
     return with_maintainers, without_maintainers, all_maintainers
 
 
+async def add_issue_maintainers(event, gh, package_list):
+    """
+    Assign maintainers of packages based on issue title.
+
+    **Important** this handler is currently not in use, but the logic
+    is kept here to preserve for the future. We can edit the issue template
+    to explicitly name a list of one or more packages, and then use that
+    instead of parsing the title, as we do here.
+    """
+    # Add extra space to start and end of title so we catch matches at ends
+    title = " " + event.data["issue"]["title"].lower() + " "
+
+    # Replace special characters with spaces
+    title = re.sub("[!#%^*(){}:_&$+@\/\[\]]+", " ", title)  # noqa
+
+    # Does the title have a known package (must have space before and after)
+    package_regex = "( %s )" % " | ".join(package_list)
+    packages = re.findall(package_regex, title)
+
+    # If we match a package in the title, look for maintainers to ping
+    if packages:
+
+        # Remove extra spacing that helped search
+        packages = [x.strip() for x in packages]
+
+        # Look for maintainers of the package
+        messages = []
+        with helpers.temp_dir() as cwd:
+            git("clone", "--depth", "1", helpers.spack_develop_url)
+
+            # Add `spack` to PATH
+            os.environ["PATH"] = f"{cwd}/spack/bin:" + os.environ["PATH"]
+            from sh import spack
+
+            for package in packages:
+
+                # Query maintainers from develop
+                found_maintainers = spack(
+                    "maintainers", package, _ok_code=(0, 1)
+                ).split()
+                if found_maintainers:
+                    found_maintainers = " ".join(
+                        ["@%s," % m for m in found_maintainers]
+                    )
+                    messages.append(
+                        "- Hey %s, it looks like you might know about the %s package. Can you help with this issue?"
+                        % (found_maintainers, package)
+                    )
+
+        # If we have maintainers, ping them for help in the issue
+        if messages:
+            comment = comments.maintainer_request.format(
+                maintainers="\n".join(messages)
+            )
+            await gh.post(
+                event.data["issue"]["comments_url"], {}, data={"body": comment}
+            )
+
+
 async def add_reviewers(event, gh):
-    """Add a comment on a PR to ping maintainers to review the PR.
+    """
+    Add a comment on a PR to ping maintainers to review the PR.
 
     If a package does not have any maintainers yet, request them.
     """
@@ -136,7 +173,7 @@ async def add_reviewers(event, gh):
 
     logger.info(f"Looking for reviewers for PR #{number}...")
 
-    packages = await changed_packages(gh, pull_request)
+    packages = await helpers.changed_packages(gh, pull_request)
 
     # Don't ask maintainers for review if hundreds of packages are modified,
     # it's probably just a license or Spack API change, not a package change.
@@ -174,7 +211,9 @@ async def add_reviewers(event, gh):
             # will show read for pretty much anyone for public repos. So we have to
             # check the first URL first.
             collaborators_url = repository["collaborators_url"]
-            if not await found(gh.getitem(collaborators_url, {"collaborator": user})):
+            if not await helpers.found(
+                gh.getitem(collaborators_url, {"collaborator": user})
+            ):
                 logger.info(f"Not found: {user}")
                 non_reviewers.append(user)
                 continue

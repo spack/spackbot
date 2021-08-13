@@ -22,10 +22,17 @@ logger = logging.getLogger("spackbot")
 
 class SpackbotRouter(routing.Router):
 
-    """Custom router to handle common interactions for spackbot"""
+    """
+    Custom router to handle common interactions for spackbot
+    """
 
     async def dispatch(self, event: sansio.Event, *args: Any, **kwargs: Any) -> None:
         """Dispatch an event to all registered function(s)."""
+
+        # if we haven't retrieved package list yet, do so
+        if not hasattr(self, "packages"):
+            self.packages = await helpers.list_packages()
+
         # for all endpoints, spackbot should not respond to himself!
         if "comment" in event.data and re.search(
             helpers.alias_regex, event.data["comment"]["user"]["login"]
@@ -59,13 +66,14 @@ async def on_pull_request(event, gh, *args, session, **kwargs):
     """
     Respond to the pull request being opened
     """
+    await handlers.count_packages(event, gh)
     await handlers.add_reviewers(event, gh)
 
 
 @router.register("issue_comment", action="created")
 async def add_comments(event, gh, *args, session, **kwargs):
     """
-    Respond to all messages (comments) to spackbot
+    Receive pull request comments
     """
     # We can only tell PR and issue comments apart by this field
     if "pull_request" not in event.data["issue"]:

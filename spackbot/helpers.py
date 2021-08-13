@@ -6,11 +6,13 @@
 
 from io import StringIO
 import contextlib
+import gidgethub
 import logging
 import os
+import re
 import tempfile
-import gidgethub
 
+from gidgethub import aiohttp
 from datetime import datetime
 
 """Shared function helpers that can be used across routes"
@@ -35,6 +37,44 @@ logging.info(f"bot name is {botname}")
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
 alias_regex = "(%s)" % "|".join(aliases)
+
+
+async def list_packages():
+    """
+    Get a list of package names
+    """
+    # Don't provide endpoint with credentials!
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            "https://spack.github.io/packages/data/packages.json"
+        ) as response:
+            response = await response.json()
+
+    return [x.lower() for x in response]
+
+
+async def changed_packages(gh, pull_request):
+    """Return an array of packages that were modified by a PR.
+
+    Ignore deleted packages, since we can no longer query them for
+    maintainers.
+
+    """
+    # see which files were modified
+    packages = []
+    async for f in gh.getiter(pull_request["url"] + "/files"):
+        filename = f["filename"]
+        status = f["status"]
+
+        if status == "removed":
+            continue
+
+        match = re.match(package_path, filename)
+        if not match:
+            continue
+        packages.append(match.group(1))
+
+    return packages
 
 
 @contextlib.contextmanager

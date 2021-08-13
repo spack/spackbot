@@ -5,10 +5,9 @@
 
 import logging
 import os
+import spackbot.helpers as helpers
 
 from gidgethub import aiohttp
-
-from spackbot.helpers import found, gitlab_spack_project_url, spack_gitlab_url
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,9 @@ async def run_pipeline(event, gh):
         logger.info(f"Author {author} is requesting a pipeline run.")
 
     # If they don't have write, we don't allow the command
-    elif not await found(gh.getitem(collaborators_url, {"collaborator": sender})):
+    elif not await helpers.found(
+        gh.getitem(collaborators_url, {"collaborator": sender})
+    ):
         logger.info(f"Not found: {sender}")
         return f"Sorry {sender}, I cannot do that for you. Only users with write can make this request!"
 
@@ -50,7 +51,7 @@ async def run_pipeline(event, gh):
     branch = pr["head"]["ref"]
     branch = f"github/pr{number}_{branch}"
 
-    url = f"{gitlab_spack_project_url}/pipeline?ref={branch}"
+    url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
     headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 
     # Don't provide GitHub credentials to GitLab!
@@ -59,6 +60,6 @@ async def run_pipeline(event, gh):
             result = await response.json()
 
     if "detailed_status" in result and "details_path" in result["detailed_status"]:
-        url = f"{spack_gitlab_url}/{result['detailed_status']['details_path']}"
+        url = f"{helpers.spack_gitlab_url}/{result['detailed_status']['details_path']}"
         return f"I've started that [pipeline]({url}) for you!"
     return "I had a problem triggering the pipeline."

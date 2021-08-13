@@ -8,6 +8,7 @@ Hi I'm spackbot! 👋  I can help you with [spack](https://github.com/spack/spac
 - [Style](#style)
 - [Labels](#labels)
 - [Maintainers](#maintainers)
+- [Packages](#packages)
 
 ## Quick Start
  
@@ -57,3 +58,9 @@ Are you opening a pull request for a package? I'll help to find and ping maintai
 
 And I just might have some other commands and jokes up my sleeve! Want to learn more? Browse the links on the left navigation, or
 <a href="https://github.com/spack/spack-bot" target="_blank">ask me a question</a>. Thanks for stopping by! 😉
+
+### Packages
+
+It's often easier (and faster!) to review pull requests when they are opened for single packages.
+Toward this aim, if Spackbot sees that you've opened a pull request that is changing multiple packages,
+he will suggest to open a different pull request for each package.
