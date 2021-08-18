@@ -16,7 +16,6 @@ from gidgethub import aiohttp as gh_aiohttp
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("spackbot")
 
 #: Location for authenticatd app to get a token for one of its installations
@@ -95,6 +94,7 @@ async def authenticate_installation(payload):
             # Use the JWT to get a limited-life OAuth token for a particular
             # installation of the app. Note that we get a JWT only when
             # necessary -- when we need to renew the installation token.
+            logger.debug("Installation ID: %s" % installation_id)
             result = await gh.post(
                 INSTALLATION_TOKEN_URL,
                 {"installation_id": installation_id},
