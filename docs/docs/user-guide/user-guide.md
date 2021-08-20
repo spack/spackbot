@@ -11,7 +11,6 @@
   - [Help](#help)
   - [Pipelines](#pipelines)
   - [Style](#style)
-  - [Packages](#packages)
   - [Issues](#issues)
   
 ## How it works
@@ -39,7 +38,6 @@ with different events.
 |help| Ask for help from spackbot | `@spackbot help` or `@spackbot commands`|
 |pipelines| Ask spackbot to re-run a GitLab pipeline | `@spackbot (re-)run pipelines`|
 |style| Spackbot will detect a failed style check and tell you how to fix it | |
-|packages| Spackbot will give you a friendly suggestion to open multiple PRs for changes to multiple packages | |
 |fix style| The command to fix style will run `spack style --fix`| `@spackbot fix style`|
 
 ## Commands
@@ -147,14 +145,3 @@ And if you have write access, you can then ask Spackbot to fix it on your behalf
 ```bash
 @spackbot fix style
 ```
-
-## Packages
-
-?> automated interaction
-
-If Spackbot notices that you are opening a pull request with multiple packages,
-he will kindly suggest that you consider opening multiple pull requests:
-
-![img/multiple-packages.png](img/multiple-packages.png)
-
-This is good advice as it will make the pull requests easier to review.
