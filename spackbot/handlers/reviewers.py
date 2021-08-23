@@ -11,6 +11,7 @@ import sh
 from sh.contrib import git
 import spackbot.helpers as helpers
 import spackbot.comments as comments
+from gidgethub import BadRequest
 
 logger = logging.getLogger(__name__)
 
@@ -263,11 +264,17 @@ async def add_reviewers(event, gh):
             else:
                 logger.info(f"Adding collaborators: {non_reviewers}")
                 for user in non_reviewers:
-                    await gh.put(
-                        members_url,
-                        {"member": user},
-                        data={"role": "member"},
-                    )
+                    try:
+                        await gh.put(
+                            members_url, {"member": user}, data={"role": "member"}
+                        )
+                    except BadRequest as e:
+                        if e.status_code == 404:
+                            logger.warning(
+                                f"Skipping adding member {user}, likely already added: {e}"
+                            )
+                        else:
+                            raise e
 
             # https://docs.github.com/en/rest/reference/issues#create-an-issue-comment
             comment_body = comments.non_reviewers_comment.format(
