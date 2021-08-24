@@ -12,7 +12,7 @@ import os
 import re
 import tempfile
 
-from gidgethub import aiohttp
+import aiohttp
 from datetime import datetime
 
 """Shared function helpers that can be used across routes"
