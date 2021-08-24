@@ -17,7 +17,8 @@ from .auth import authenticate_installation
 # take environment variables from .env file (if present)
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+log_level = os.environ.get("LOGLEVEL", "INFO").upper()
+logging.basicConfig(level=log_level)
 logger = logging.getLogger("spackbot")
 
 #: Location for authenticatd app to get a token for one of its installations
