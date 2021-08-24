@@ -18,6 +18,7 @@ from datetime import datetime
 """Shared function helpers that can be used across routes"
 """
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("spackbot")
 
 spack_develop_url = "https://github.com/spack/spack"

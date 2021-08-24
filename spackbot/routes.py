@@ -16,6 +16,7 @@ import spackbot.helpers as helpers
 from gidgethub import routing
 from typing import Any
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("spackbot")
 
 
