@@ -54,6 +54,8 @@ async def run_pipeline(event, gh):
     url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
     headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 
+    logger.info(f"{sender} triggering pipeline, url = {url}")
+
     # Don't provide GitHub credentials to GitLab!
     async with aiohttp.ClientSession() as session:
         async with session.post(url, headers=headers) as response:
@@ -62,4 +64,7 @@ async def run_pipeline(event, gh):
     if "detailed_status" in result and "details_path" in result["detailed_status"]:
         url = f"{helpers.spack_gitlab_url}/{result['detailed_status']['details_path']}"
         return f"I've started that [pipeline]({url}) for you!"
+
+    logger.info(f"Problem triggering pipeline on {branch}")
+    logger.info(result)
     return "I had a problem triggering the pipeline."
