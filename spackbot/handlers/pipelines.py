@@ -7,7 +7,7 @@ import logging
 import os
 import spackbot.helpers as helpers
 
-from gidgethub import aiohttp
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
