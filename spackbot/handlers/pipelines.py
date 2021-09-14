@@ -5,6 +5,7 @@
 
 import logging
 import os
+import urllib.parse
 import spackbot.helpers as helpers
 
 import aiohttp
@@ -50,6 +51,7 @@ async def run_pipeline(event, gh):
     # We need the branch name plus number to assemble the GitLab CI
     branch = pr["head"]["ref"]
     branch = f"github/pr{number}_{branch}"
+    branch = urllib.parse.quote_plus(branch)
 
     url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
     headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
