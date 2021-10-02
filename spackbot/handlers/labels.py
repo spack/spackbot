@@ -162,6 +162,10 @@ async def add_labels(event, gh):
             attr_matches = []
             # Pattern matches for for each attribute are or'd together
             for attr, patterns in pattern_dict.items():
+                if not attr in file:
+                    logger.warning(f"attr '{attr}' not found in file: {file}")
+                    continue
+
                 attr_matches.append(any(p.search(file[attr]) for p in patterns))
             # If all attributes have at least one pattern match, we add the label
             if all(attr_matches):
