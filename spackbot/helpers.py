@@ -5,6 +5,7 @@
 
 
 from io import StringIO
+import aiohttp
 import contextlib
 import gidgethub
 import logging
@@ -12,7 +13,6 @@ import os
 import re
 import tempfile
 
-from gidgethub import aiohttp
 from datetime import datetime
 
 """Shared function helpers that can be used across routes"
