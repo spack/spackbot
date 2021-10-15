@@ -34,29 +34,6 @@ def say_hello():
     return random.choice(messages)
 
 
-def get_style_message(output):
-    """
-    Given a terminal output, wrap in a message
-    """
-    # The output is limited to what GitHub can store in comments, 65,536 4-byte unicode
-    # total rounded down -300 for text below
-    if len(output) >= 64700:
-        output = output[:64682] + "\n... truncated ..."
-
-    return f"""
-I was able to run `spack style --fix` for you!
-<details>
-<summary><b>spack style --fix</b></summary>
-
-```bash
-{output}
-```
-</details>
-Keep in mind that I cannot fix your flake8 or mypy errors, so if you have any you'll need to fix them and update the pull request.
-If I was able to push to your branch, if you make further changes you will need to pull from your updated branch before pushing again.
-"""
-
-
 commands_message = f"""
 You can interact with me in many ways!
 

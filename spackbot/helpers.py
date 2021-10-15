@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-
-from io import StringIO
 import aiohttp
 import contextlib
 import gidgethub
@@ -103,17 +101,6 @@ async def get_user_email(gh, user):
     else:
         email = f"{user}@users.noreply.github.com"
     return email
-
-
-def run_command(control, cmd, ok_codes=None):
-    """
-    Run a spack or git command and get output and error
-    """
-    ok_codes = ok_codes or [0, 1]
-    res = StringIO()
-    err = StringIO()
-    control(*cmd, _out=res, _err=err, _ok_code=ok_codes)
-    return res.getvalue(), err.getvalue()
 
 
 async def found(coroutine):
