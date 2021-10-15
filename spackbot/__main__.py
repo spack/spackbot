@@ -17,8 +17,10 @@ from .auth import authenticate_installation
 # take environment variables from .env file (if present)
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("spackbot")
+
+#: valid log levels
+log_levels = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 #: Location for authenticatd app to get a token for one of its installations
 INSTALLATION_TOKEN_URL = "app/installations/{installation_id}/access_tokens"
@@ -33,6 +35,14 @@ routes = web.RouteTableDef()
 @routes.post("/")
 async def main(request):
     """Main entrypoint for all routes"""
+    # set the log level once in main.
+    level = os.environ.get("SPACKBOT_LOGLEVEL", "INFO").upper()
+    if level in log_levels:
+        logging.basicConfig(level=level)
+    else:
+        logging.basicConfig(level=logging.INFO)
+        logger.warning(f"Unknown log level: {level}. Set level to INFO.")
+
     # read the GitHub webhook payload
     body = await request.read()
 
