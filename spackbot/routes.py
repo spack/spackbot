@@ -109,7 +109,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
         await handlers.add_reviewers(event, gh)
 
     # @spackbot run pipeline | @spackbot re-run pipeline
-    elif re.search(f"{helpers.botname} (re-)?run pipeline", comment, re.IGNORECASE):
+    elif re.search(f"{helpers.botname} (re-?)?run pipeline", comment, re.IGNORECASE):
         logger.info("Responding to request to re-run pipeline...")
         message = await handlers.run_pipeline(event, gh)
 
