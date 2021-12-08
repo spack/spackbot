@@ -38,6 +38,12 @@ logging.info(f"bot name is {botname}")
 aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
 alias_regex = "(%s)" % "|".join(aliases)
 
+# Information needed for graduating PR binaries
+pr_mirror_base_url = os.environ.get(
+    "PR_BINARIES_MIRROR_BASE_URL", "s3://spack-binaries-prs"
+)
+pr_expected_base = os.environ.get("PR_BINARIES_BASE_BRANCH", "develop")
+
 
 async def list_packages():
     """
