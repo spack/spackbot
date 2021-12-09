@@ -1,0 +1,10 @@
+aiohttp
+gidgethub
+python_dotenv
+rq
+sh
+
+# Add these so we don't wait for install
+mypy
+flake8
+isort

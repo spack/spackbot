@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import io
 import random
+import traceback
 import spackbot.helpers as helpers
 
 
@@ -11,9 +13,13 @@ async def tell_joke(gh):
     """
     Tell a joke to ease the PR tension!
     """
-    joke = await gh.getitem(
-        "https://official-joke-api.appspot.com/jokes/programming/random"
-    )
+    try:
+        joke = await gh.getitem(
+            "https://official-joke-api.appspot.com/jokes/programming/random"
+        )
+    except Exception:
+        return "To be honest, I haven't heard any good jokes lately."
+
     joke = joke[0]
     return f"> {joke['setup']}\n *{joke['punchline']}*\n😄️"
 
@@ -57,6 +63,31 @@ If I was able to push to your branch, if you make further changes you will need 
 """
 
 
+def get_style_error_message(e_type, e_value, tb):
+    """
+    Given job failure details, format an error message to post.  The
+    parameters e_type, e_value, and tb (for traceback) should be the same as
+    returned by sys.exc_info().
+    """
+    buffer = io.StringIO()
+    traceback.print_tb(tb, file=buffer)
+    tb_contents = buffer.getvalue()
+    buffer.close()
+
+    return f"""
+I encountered an error attempting to format style.
+<details>
+<summary><b>Details</b></summary>
+
+```bash
+Error: {e_type}, {e_value}
+Stack trace:
+{tb_contents}
+```
+</details>
+"""
+
+
 commands_message = f"""
 You can interact with me in many ways!
 
@@ -70,8 +101,14 @@ I'll also help to label your pull request and assign reviewers!
 If you need help or see there might be an issue with me, open an issue [here](https://github.com/spack/spack-bot/issues)
 """
 
-style_message = """
-It looks like you had an issue with style checks! To fix this, you can run:
+style_message = f"""
+It looks like you had an issue with style checks! I can help with that if you ask me!  Just say:
+
+`{helpers.botname} fix style`
+
+... and I'll try to fix style and push a commit to your fork with the fix.
+
+Alternatively, you can run:
 
 ```bash
 $ spack style --fix

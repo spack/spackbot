@@ -3,14 +3,17 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import os
+
 import spackbot.comments as comments
 import spackbot.helpers as helpers
-from sh.contrib import git
-import logging
-import os
-import sh
 
-logger = logging.getLogger(__name__)
+from spackbot.workers import fix_style_task, report_style_failure, work_queue
+
+# If we don't provide a timeout, the default in RQ is 180 seconds
+WORKER_JOB_TIMEOUT = int(os.environ.get("WORKER_JOB_TIMEOUT", "21600"))
+
+logger = helpers.get_logger(__name__)
 
 
 async def style_comment(event, gh):
@@ -31,90 +34,32 @@ async def style_comment(event, gh):
             await gh.post(comments_url, {}, data={"body": comments.style_message})
 
 
-def is_up_to_date(output):
+async def fix_style(event, gh, *args, **kwargs):
     """
-    A commit can fail if there are no changes!
+    Respond to a request to fix style by placing a task in the work queue
     """
-    return "branch is up to date" in output
+    installation_id = None
 
+    if "installation_id" in kwargs:
+        installation_id = kwargs["installation_id"]
 
-async def fix_style(event, gh):
-    """
-    Respond to a request to fix style.
-    We first retrieve metadata about the pull request. If the request comes
-    from anyone with write access to the repository, we commit, and we commit
-    under the identity of the original person that opened the PR.
-    """
-    pr = await gh.getitem(event.data["issue"]["pull_request"]["url"])
+    job_metadata = {
+        # This object is attached to job, so we can e.g. access from within the
+        # job's on_failure callback.
+        "post_comments_url": event.data["issue"]["comments_url"],
+        "token": None,
+    }
 
-    # Get the sender of the PR - do they have write?
-    sender = event.data["sender"]["login"]
-    repository = event.data["repository"]
-    collaborators_url = repository["collaborators_url"]
+    if "token" in kwargs:
+        job_metadata["token"] = kwargs["token"]
 
-    # If they don't have write, we don't allow the command
-    if not await helpers.found(gh.getitem(collaborators_url, {"collaborator": sender})):
-        logger.info(f"Not found: {sender}")
-        return f"Sorry {sender}, I cannot do that for you. Only users with write can make this request!"
-
-    # Tell the user the style fix is going to take a minute or two
-    message = "Let me see if I can fix that for you! This might take a moment..."
-    await gh.post(event.data["issue"]["comments_url"], {}, data={"body": message})
-
-    # Get the username of the original committer
-    user = pr["user"]["login"]
-
-    # We need the user id if the user is before July 18. 2017
-    email = await helpers.get_user_email(gh, user)
-
-    # We need to use the git url with ssh
-    branch = pr["head"]["ref"]
-    full_name = pr["head"]["repo"]["full_name"]
-    fork_url = f"git@github.com:{full_name}.git"
-
-    # At this point, we can clone the repository and make the change
-    with helpers.temp_dir() as cwd:
-
-        # Clone a fresh spack develop to use for spack style
-        git("clone", helpers.spack_upstream, "spack-develop")
-
-        spack = sh.Command(f"{cwd}/spack-develop/bin/spack")
-
-        # clone the develop repository to another folder for our PR
-        git("clone", "spack-develop", "spack")
-
-        os.chdir("spack")
-        git("config", "user.name", user)
-        git("config", "user.email", email)
-
-        # This will authenticate the push with the added ssh credentials
-        git("remote", "add", "upstream", helpers.spack_upstream)
-        git("remote", "set-url", "origin", fork_url)
-
-        # we're on upstream/develop. Fetch and check out just the PR branch
-        git("fetch", "origin", f"{branch}:{branch}")
-        git("checkout", branch)
-
-        # Save the message for the user
-        res, err = helpers.run_command(spack, ["--color", "never", "style", "--fix"])
-        message = comments.get_style_message(res)
-
-        # Commit (allow for no changes)
-        res, err = helpers.run_command(
-            git,
-            ["commit", "-a", "-m", f"[spackbot] updating style on behalf of {user}"],
-        )
-
-        # Continue differently if the branch is up to date or not
-        if is_up_to_date(res):
-            message += "\nI wasn't able to make any further changes, but please see the message above for remaining issues you can fix locally!"
-            return message
-        message += "\nI've updated the branch with isort fixes."
-
-        # Finally, try to push, update the message if permission not allowed
-        try:
-            git("push", "origin", branch)
-        except Exception:
-            message += "\n\nBut it looks like I'm not able to push to your branch. 😭️ Did you check maintainer can edit when you opened the PR?"
-
-    return message
+    task_q = work_queue.get_queue()
+    fix_style_job = task_q.enqueue(
+        fix_style_task,
+        event,
+        installation_id,
+        job_timeout=WORKER_JOB_TIMEOUT,
+        meta=job_metadata,
+        on_failure=report_style_failure,
+    )
+    logger.info(f"Fix style job enqueued: {fix_style_job.id}")

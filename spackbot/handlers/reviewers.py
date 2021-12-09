@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import logging
 import os
 import re
 
@@ -13,7 +12,7 @@ import spackbot.helpers as helpers
 import spackbot.comments as comments
 from gidgethub import BadRequest
 
-logger = logging.getLogger(__name__)
+logger = helpers.get_logger(__name__)
 
 
 async def parse_maintainers_from_patch(gh, pull_request):

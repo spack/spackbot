@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import logging
 import os
 
 import aiohttp
@@ -13,12 +12,12 @@ from gidgethub import sansio
 from gidgethub import aiohttp as gh_aiohttp
 from .routes import router
 from .auth import authenticate_installation
+from .helpers import get_logger
 
 # take environment variables from .env file (if present)
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("spackbot")
+logger = get_logger(__name__)
 
 #: Location for authenticatd app to get a token for one of its installations
 INSTALLATION_TOKEN_URL = "app/installations/{installation_id}/access_tokens"
@@ -41,13 +40,19 @@ async def main(request):
     logger.info(f"Received event {event}")
 
     # get an installation token to make a GitHubAPI for API calls
-    token = await authenticate_installation(event.data)
+    installation_id = event.data["installation"]["id"]
+    token = await authenticate_installation(installation_id)
+
+    dispatch_kwargs = {
+        "installation_id": installation_id,
+        "token": token,
+    }
 
     async with aiohttp.ClientSession() as session:
         gh = gh_aiohttp.GitHubAPI(session, REQUESTER, oauth_token=token)
 
         # call the appropriate callback for the event
-        await router.dispatch(event, gh, session=session)
+        await router.dispatch(event, gh, session=session, **dispatch_kwargs)
 
     # return a "Success"
     return web.Response(status=200)

@@ -8,6 +8,25 @@ services:
       context: .
       dockerfile: smee/Dockerfile
 
+  rq-worker:
+    build:
+      context: .
+      dockerfile: workers/Dockerfile
+    env_file:
+      - ./.env
+    deploy:
+      replicas: 1
+
+  rq-server:
+    env_file:
+      - ./.env
+    image: redis:alpine
+    expose:
+      - ${REDIS_PORT}
+    volumes:
+      - redis-data:/data
+      - redis-conf:/usr/local/etc/redis/redis.conf
+
   spackbot:
     build:
       context: .
@@ -29,3 +48,7 @@ services:
       - ./.env
     links:
       - smee
+
+volumes:
+  redis-data:
+  redis-conf:
