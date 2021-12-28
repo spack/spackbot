@@ -112,6 +112,10 @@ async def add_comments(event, gh, *args, session, **kwargs):
     elif re.search(f"{helpers.botname} (re-?)?run pipeline", comment, re.IGNORECASE):
         logger.info("Responding to request to re-run pipeline...")
         message = await handlers.run_pipeline(event, gh)
+    # @spackbot retry pipeline
+    elif re.search(f"{helpers.botname} retry pipeline", comment, re.IGNORECASE):
+        logger.info("Responding to request to retry failed jobs in pipeline...")
+        message = await handlers.run_pipeline(event, gh, retry_pipeline=True)
 
     if message:
         await gh.post(event.data["issue"]["comments_url"], {}, data={"body": message})
