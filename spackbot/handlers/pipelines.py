@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
 
 
-async def run_pipeline(event, gh):
+async def run_pipeline(event, gh, retry_pipeline=False):
     """
     Make a request to re-run a pipeline.
     """
@@ -52,20 +52,55 @@ async def run_pipeline(event, gh):
     branch = pr["head"]["ref"]
     branch = f"github/pr{number}_{branch}"
     branch = urllib.parse.quote_plus(branch)
+    if not retry_pipeline:
+        trigger_type = "started"
+        url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
+        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 
-    url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
-    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+        # Don't provide GitHub credentials to GitLab!
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers) as response:
+                result = await response.json()
+    else:
+        # Get a list of all pipelines, to be filtered later
+        result = []
+        trigger_type = "retried"
+        query_string = f"?order_by=updated_at&ref={branch}"
+        url = f"{helpers.gitlab_spack_project_url}/pipelines{query_string}"
+        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 
-    logger.info(f"{sender} triggering pipeline, url = {url}")
+        # Don't provide GitHub credentials to GitLab!
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers) as response:
+                pipelines = await response.json()
+        logger.debug(f"{sender} triggering pipeline, url = {url}")
 
-    # Don't provide GitHub credentials to GitLab!
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers) as response:
-            result = await response.json()
+        if pipelines and "error" not in pipelines:
+            # If most recent pipeline succeeded, don't retry
+            if pipelines[0]["status"] == "success":
+                return (
+                    "The last pipeline was run successfully.  There is nothing to retry"
+                )
+            else:
+                # Filter out all but "canceled", 'skipped' or 'failed'
+                retry_pipelines = [
+                    x
+                    for x in pipelines
+                    if x["status"] in ["canceled", "skipped", "failed"]
+                ]
+                # Uses the retry API: https://docs.gitlab.com/ee/api/pipelines.html#retry-jobs-in-a-pipeline
+                if retry_pipelines:
+                    url = f"{helpers.gitlab_spack_project_url}/pipelines?{retry_pipelines[0]['id']}/retry"
+                    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+
+                    # Don't provide GitHub credentials to GitLab!
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(url, headers=headers) as response:
+                            result = await response.json()
 
     if "detailed_status" in result and "details_path" in result["detailed_status"]:
         url = f"{helpers.spack_gitlab_url}/{result['detailed_status']['details_path']}"
-        return f"I've started that [pipeline]({url}) for you!"
+        return f"I've {trigger_type} that [pipeline]({url}) for you!"
 
     logger.info(f"Problem triggering pipeline on {branch}")
     logger.info(result)
