@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import logging
 import re
 
 from gidgethub import sansio
@@ -16,8 +15,7 @@ import spackbot.helpers as helpers
 from gidgethub import routing
 from typing import Any
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("spackbot")
+logger = helpers.get_logger(__name__)
 
 
 class SpackbotRouter(routing.Router):
@@ -94,7 +92,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
 
     elif re.search(f"{helpers.botname} fix style", comment, re.IGNORECASE):
         logger.debug("Responding to request to fix style")
-        message = await handlers.fix_style(event, gh)
+        message = await handlers.fix_style(event, gh, *args, **kwargs)
 
     # @spackbot commands OR @spackbot help
     elif re.search(f"{helpers.botname} (commands|help)", comment, re.IGNORECASE):

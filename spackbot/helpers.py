@@ -4,22 +4,23 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
-from io import StringIO
+import aiohttp
 import contextlib
 import gidgethub
+import json
 import logging
 import os
 import re
 import tempfile
 
-from gidgethub import aiohttp
 from datetime import datetime
+from io import StringIO
+from sh import ErrorReturnCode
+from urllib.request import HTTPHandler, Request, build_opener
+
 
 """Shared function helpers that can be used across routes"
 """
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("spackbot")
 
 spack_develop_url = "https://github.com/spack/spack"
 spack_gitlab_url = "https://gitlab.spack.io"
@@ -32,11 +33,35 @@ package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 
 # Bot name can be modified in the environment
 botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
-logging.info(f"bot name is {botname}")
 
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
 alias_regex = "(%s)" % "|".join(aliases)
+
+__spackbot_log_level = None
+__supported_log_levels = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+
+
+def get_logger(name):
+    global __spackbot_log_level
+
+    if not __spackbot_log_level:
+        __spackbot_log_level = os.environ.get("SPACKBOT_LOG_LEVEL", "INFO").upper()
+
+        if __spackbot_log_level not in __supported_log_levels:
+            # Logging not yet configured, so just print this warning
+            print(
+                f"WARNING: Unknown log level {__spackbot_log_level}, using INFO instead."
+            )
+            __spackbot_log_level = "INFO"
+
+        logging.basicConfig(level=__spackbot_log_level)
+
+    return logging.getLogger(name)
+
+
+logger = get_logger(__name__)
+logger.info(f"bot name is {botname}")
 
 
 async def list_packages():
@@ -46,7 +71,7 @@ async def list_packages():
     # Don't provide endpoint with credentials!
     async with aiohttp.ClientSession() as session:
         async with session.get(
-            "https://spack.github.io/packages/data/packages.json"
+            "https://packages.spack.io/data/packages.json"
         ) as response:
             response = await response.json()
 
@@ -112,7 +137,17 @@ def run_command(control, cmd, ok_codes=None):
     ok_codes = ok_codes or [0, 1]
     res = StringIO()
     err = StringIO()
-    control(*cmd, _out=res, _err=err, _ok_code=ok_codes)
+
+    try:
+        control(*cmd, _out=res, _err=err, _ok_code=ok_codes)
+    except ErrorReturnCode as inst:
+        logger.error(f"cmd {cmd} exited non-zero")
+        logger.error(f"stdout from {cmd}:")
+        logger.error(res.getvalue())
+        logger.error(f"stderr from {cmd}:")
+        logger.error(err.getvalue())
+        raise inst
+
     return res.getvalue(), err.getvalue()
 
 
@@ -130,3 +165,55 @@ async def found(coroutine):
         if e.status_code == 404:
             return None
         raise
+
+
+def synchronous_http_request(url, data=None, token=None):
+    """
+    Makes synchronous http request to the provided url, using the token for
+    authentication.
+
+    Args:
+
+        url: the target of the http request
+        data: optional dictionary containing request payload data.  After stringify
+        and utf-8 encoding, this is passed directly to urllib.request.Request
+        constructor.
+        token: optional, the value to use as the bearer in the auth header
+
+    Returns:
+
+        http response or None if request could not be made
+
+    TODO: The on_failure callback provided at job scheduling time is not
+    TODO: getting called when it is defined as async. So this is a synchronous
+    TODO: way using only standard lib calls to do what we do everywhere else by
+    TODO: awaiting gh api methods.  Need to figure out if that is a bug, by design,
+    TODO: or if I was just doing it wrong.
+    """
+    if not url:
+        logger.error("No url provided")
+        return None
+
+    headers = {}
+
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    if data:
+        data = json.dumps(data).encode("utf-8")
+
+    request = Request(
+        url,
+        data=data,
+        headers=headers,
+    )
+
+    opener = build_opener(HTTPHandler)
+    response = opener.open(request)
+    response_code = response.getcode()
+
+    logger.debug(
+        f"synchronous_http_request sent request to {url}, response code: {response_code}"
+    )
+
+    return response

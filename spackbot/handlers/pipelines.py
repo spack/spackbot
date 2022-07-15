@@ -3,14 +3,13 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import logging
 import os
 import urllib.parse
 import spackbot.helpers as helpers
 
 import aiohttp
 
-logger = logging.getLogger(__name__)
+logger = helpers.get_logger(__name__)
 
 # We can only make the request with a GITLAB TOKEN
 GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
@@ -50,7 +49,7 @@ async def run_pipeline(event, gh):
 
     # We need the branch name plus number to assemble the GitLab CI
     branch = pr["head"]["ref"]
-    branch = f"github/pr{number}_{branch}"
+    branch = f"pr{number}_{branch}"
     branch = urllib.parse.quote_plus(branch)
 
     url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"

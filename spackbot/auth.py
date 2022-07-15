@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import logging
 import os
 import re
 import time
@@ -15,9 +14,6 @@ from dotenv import load_dotenv
 from gidgethub import aiohttp as gh_aiohttp
 
 load_dotenv()
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("spackbot")
 
 #: Location for authenticatd app to get a token for one of its installations
 INSTALLATION_TOKEN_URL = "app/installations/{installation_id}/access_tokens"
@@ -79,14 +75,13 @@ async def get_jwt():
     return await _tokens.get_token("JWT", renew_jwt)
 
 
-async def authenticate_installation(payload):
+async def authenticate_installation(installation_id):
     """Get an installation access token for the application.
 
     Renew the JWT if necessary, then use it to get an installation access
     token from github, if necessary.
 
     """
-    installation_id = payload["installation"]["id"]
 
     async def renew_installation_token():
         async with aiohttp.ClientSession() as session:

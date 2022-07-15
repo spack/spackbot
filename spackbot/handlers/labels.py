@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import re
-import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("spackbot")
+import spackbot.helpers as helpers
+
+logger = helpers.get_logger(__name__)
 
 
 #: ``label_patterns`` maps labels to patterns that tell us to apply the labels.
@@ -163,7 +163,18 @@ async def add_labels(event, gh):
             attr_matches = []
             # Pattern matches for for each attribute are or'd together
             for attr, patterns in pattern_dict.items():
-                attr_matches.append(any(p.search(file[attr]) for p in patterns))
+                # 'patch' is an example of an attribute that is not required to
+                # appear in response when listing pull request files.  See here:
+                #
+                #    https://docs.github.com/en/rest/pulls/pulls#list-pull-requests-files
+                #
+                # If we don't get some attribute in the response, no labels that
+                # depend on finding a match in that attribute should be added.
+                attr_matches.append(
+                    any(p.search(file[attr]) for p in patterns)
+                    if attr in file
+                    else False
+                )
             # If all attributes have at least one pattern match, we add the label
             if all(attr_matches):
                 labels.append(label)
