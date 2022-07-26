@@ -118,12 +118,13 @@ async def fix_style_task(event, installation_id=None):
         email = await helpers.get_user_email(gh, user)
 
         # We need to use the git url with ssh
-        branch = pr["head"]["ref"]
+        remote_branch = pr["head"]["ref"]
+        local_branch = "spackbot-style-check-working-branch"
         full_name = pr["head"]["repo"]["full_name"]
         fork_url = f"git@github.com:{full_name}.git"
 
         logger.info(
-            f"fix_style_task, user = {user}, email = {email}, fork = {fork_url}, branch = {branch}\n"
+            f"fix_style_task, user = {user}, email = {email}, fork = {fork_url}, branch = {remote_branch}\n"
         )
 
         # At this point, we can clone the repository and make the change
@@ -147,10 +148,12 @@ async def fix_style_task(event, installation_id=None):
             git.remote("set-url", "origin", fork_url)
 
             # we're on upstream/develop. Fetch just the PR branch
-            helpers.run_command(git, ["fetch", "origin", f"{branch}:{branch}"])
+            helpers.run_command(
+                git, ["fetch", "origin", f"{remote_branch}:{local_branch}"]
+            )
 
             # check out the PR branch
-            helpers.run_command(git, ["checkout", branch])
+            helpers.run_command(git, ["checkout", local_branch])
 
             # Run the style check and save the message for the user
             check_dir = os.getcwd()
@@ -188,7 +191,9 @@ async def fix_style_task(event, installation_id=None):
 
             # Finally, try to push, update the message if permission not allowed
             try:
-                helpers.run_command(git, ["push", "origin", branch])
+                helpers.run_command(
+                    git, ["push", "origin", f"{local_branch}:{remote_branch}"]
+                )
             except Exception:
                 logger.error("Unable to push to branch")
                 message += "\n\nBut it looks like I'm not able to push to your branch. 😭️ Did you check maintainer can edit when you opened the PR?"
