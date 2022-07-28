@@ -6,11 +6,12 @@ from sh.contrib import git
 import sh
 
 from redis import Redis
-from rq import Queue
+from rq import get_current_job, Queue
+
 
 import spackbot.comments as comments
 import spackbot.helpers as helpers
-from .auth import authenticate_installation, REQUESTER
+from .auth import REQUESTER
 
 logger = helpers.get_logger(__name__)
 
@@ -58,22 +59,14 @@ def report_style_failure(job, connection, type, value, traceback):
     logger.error(user_msg)
 
 
-async def fix_style_task(event, installation_id=None):
+async def fix_style_task(event):
     """
     We first retrieve metadata about the pull request. If the request comes
     from anyone with write access to the repository, we commit, and we commit
     under the identity of the original person that opened the PR.
     """
-    logger.debug(f"fix_style_task, installation_id = {installation_id}")
-
-    token = None
-
-    if installation_id:
-        token = await authenticate_installation(installation_id)
-
-    if not token:
-        logger.error("fix_style_task() unable to authenticate installation")
-        return
+    job = get_current_job()
+    token = job.meta["token"]
 
     async with aiohttp.ClientSession() as session:
         gh = gh_aiohttp.GitHubAPI(session, REQUESTER, oauth_token=token)

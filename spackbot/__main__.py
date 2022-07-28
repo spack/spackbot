@@ -44,7 +44,6 @@ async def main(request):
     token = await authenticate_installation(installation_id)
 
     dispatch_kwargs = {
-        "installation_id": installation_id,
         "token": token,
     }
 
