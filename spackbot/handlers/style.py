@@ -38,26 +38,17 @@ async def fix_style(event, gh, *args, **kwargs):
     """
     Respond to a request to fix style by placing a task in the work queue
     """
-    installation_id = None
-
-    if "installation_id" in kwargs:
-        installation_id = kwargs["installation_id"]
-
     job_metadata = {
-        # This object is attached to job, so we can e.g. access from within the
-        # job's on_failure callback.
+        # This object is attached to job, so we can access it from within the
+        # job's on_failure callback or from the job itself.
         "post_comments_url": event.data["issue"]["comments_url"],
-        "token": None,
+        "token": kwargs["token"],
     }
-
-    if "token" in kwargs:
-        job_metadata["token"] = kwargs["token"]
 
     task_q = work_queue.get_queue()
     fix_style_job = task_q.enqueue(
         fix_style_task,
         event,
-        installation_id,
         job_timeout=WORKER_JOB_TIMEOUT,
         meta=job_metadata,
         on_failure=report_style_failure,
