@@ -144,7 +144,7 @@ async def add_labels(event, gh):
 
     # Iterate over modified files and create a list of labels
     # https://developer.github.com/v3/pulls/#list-pull-requests-files
-    labels = []
+    labels = set()
     async for file in gh.getiter(pull_request["url"] + "/files"):
         filename = file["filename"]
         status = file["status"]
@@ -177,10 +177,10 @@ async def add_labels(event, gh):
                 )
             # If all attributes have at least one pattern match, we add the label
             if all(attr_matches):
-                labels.append(label)
+                labels.add(label)
 
     logger.info(f"Adding the following labels: {labels}")
 
     # https://developer.github.com/v3/issues/labels/#add-labels-to-an-issue
     if labels:
-        await gh.post(pull_request["issue_url"] + "/labels", data=labels)
+        await gh.post(pull_request["issue_url"] + "/labels", data=list(labels))
