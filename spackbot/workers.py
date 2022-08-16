@@ -17,6 +17,7 @@ logger = helpers.get_logger(__name__)
 
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+TASK_QUEUE_NAME = os.environ.get("TASK_QUEUE_NAME", "tasks")
 
 
 class WorkQueue:
@@ -24,7 +25,7 @@ class WorkQueue:
         logger.info(f"WorkQueue creating redis connection ({REDIS_HOST}, {REDIS_PORT})")
         self.redis_conn = Redis(host=REDIS_HOST, port=REDIS_PORT)
         # Name of queue workers use is defined in "workers/entrypoint.sh"
-        self.task_q = Queue(name="tasks", connection=self.redis_conn)
+        self.task_q = Queue(name=TASK_QUEUE_NAME, connection=self.redis_conn)
 
     def get_queue(self):
         return self.task_q
