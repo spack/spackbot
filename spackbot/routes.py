@@ -54,8 +54,11 @@ async def add_style_comments(event, gh, *args, session, **kwargs):
     if event.data["check_run"]["conclusion"] == "success":
         return
 
+    check_name = event.data["check_run"]["name"]
+    logger.info(f"check run {check_name} unsuccesful")
+
     # If it's not a style check, we don't care
-    if event.data["check_run"]["name"] == "style":
+    if check_name == "style":
         await handlers.style_comment(event, gh)
 
 
