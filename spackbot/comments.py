@@ -63,7 +63,7 @@ If I was able to push to your branch, if you make further changes you will need 
 """
 
 
-def get_style_error_message(e_type, e_value, tb):
+def format_error_message(msg, e_type, e_value, tb):
     """
     Given job failure details, format an error message to post.  The
     parameters e_type, e_value, and tb (for traceback) should be the same as
@@ -75,7 +75,7 @@ def get_style_error_message(e_type, e_value, tb):
     buffer.close()
 
     return f"""
-I encountered an error attempting to format style.
+{msg}
 <details>
 <summary><b>Details</b></summary>
 
@@ -94,6 +94,7 @@ You can interact with me in many ways!
 - `{helpers.botname} hello`: say hello and get a friendly response back!
 - `{helpers.botname} help` or `{helpers.botname} commands`: see this message
 - `{helpers.botname} run pipeline` or `{helpers.botname} re-run pipeline`: to request a new run of the GitLab CI pipeline
+- `{helpers.botname} rebuild everything`: to run a pipeline rebuilding all specs from source.
 - `{helpers.botname} fix style` if you have write and would like me to run `spack style --fix` for you.
 - `{helpers.botname} maintainers` or `{helpers.botname} request review`: to look for and assign reviewers for the pull request.
 

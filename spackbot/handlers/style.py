@@ -3,15 +3,16 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import os
-
 import spackbot.comments as comments
 import spackbot.helpers as helpers
 
-from spackbot.workers import fix_style_task, report_style_failure, work_queue
+from spackbot.workers import (
+    fix_style_task,
+    report_style_failure,
+    work_queue,
+    WORKER_JOB_TIMEOUT,
+)
 
-# If we don't provide a timeout, the default in RQ is 180 seconds
-WORKER_JOB_TIMEOUT = int(os.environ.get("WORKER_JOB_TIMEOUT", "21600"))
 
 logger = helpers.get_logger(__name__)
 
@@ -23,8 +24,8 @@ async def style_comment(event, gh):
     # If we get here, we have a style failure
     # Find the pull request that is matched to the repository. It looks like
     # checks are shared across different repos (e.g., a fork and upstream)
-    repository = event.data["repository"]["full_name"]
-    for pr in event.data["check_run"]["pull_requests"]:
+    repository = event.data["repository"]["full_name"]  # "spack-test/spack"
+    for pr in event.data["check_run"]["pull_requests"]:  # []
         if repository in pr["url"]:
 
             number = pr["url"].split("/")[-1]

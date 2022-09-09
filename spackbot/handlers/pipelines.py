@@ -3,69 +3,54 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import os
-import urllib.parse
 import spackbot.helpers as helpers
 
-import aiohttp
+from spackbot.workers import (
+    run_pipeline_task,
+    report_rebuild_failure,
+    work_queue,
+    WORKER_JOB_TIMEOUT,
+)
 
 logger = helpers.get_logger(__name__)
 
-# We can only make the request with a GITLAB TOKEN
-GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
+
+async def run_pipeline_rebuild_all(event, gh, **kwargs):
+    """
+    Run a pipeline that will force-rebuild everything from source
+    """
+    job_metadata = {
+        "post_comments_url": event.data["issue"]["comments_url"],
+        "rebuild_everything": True,
+        "token": kwargs["token"],
+    }
+
+    task_q = work_queue.get_queue()
+    scheduled_job = task_q.enqueue(
+        run_pipeline_task,
+        event,
+        job_timeout=WORKER_JOB_TIMEOUT,
+        meta=job_metadata,
+        on_failure=report_rebuild_failure,
+    )
+    logger.info(f"Rebuild everything job enqueued: {scheduled_job.id}")
 
 
-async def run_pipeline(event, gh):
+async def run_pipeline(event, gh, **kwargs):
     """
     Make a request to re-run a pipeline.
     """
-    # Early exit if not authenticated
-    if not GITLAB_TOKEN:
-        return "I'm not able to re-run the pipeline now because I don't have authentication."
+    job_metadata = {
+        "post_comments_url": event.data["issue"]["comments_url"],
+        "token": kwargs["token"],
+    }
 
-    # Get the pull request number
-    pr_url = event.data["issue"]["pull_request"]["url"]
-    number = pr_url.split("/")[-1]
-
-    # We need the pull request branch
-    pr = await gh.getitem(pr_url)
-
-    # Get the sender of the PR - do they have write?
-    sender = event.data["sender"]["login"]
-    repository = event.data["repository"]
-    collaborators_url = repository["collaborators_url"]
-    author = pr["user"]["login"]
-
-    # If it's the PR author, we allow it
-    if author == sender:
-        logger.info(f"Author {author} is requesting a pipeline run.")
-
-    # If they don't have write, we don't allow the command
-    elif not await helpers.found(
-        gh.getitem(collaborators_url, {"collaborator": sender})
-    ):
-        logger.info(f"Not found: {sender}")
-        return f"Sorry {sender}, I cannot do that for you. Only users with write can make this request!"
-
-    # We need the branch name plus number to assemble the GitLab CI
-    branch = pr["head"]["ref"]
-    branch = f"pr{number}_{branch}"
-    branch = urllib.parse.quote_plus(branch)
-
-    url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
-    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
-
-    logger.info(f"{sender} triggering pipeline, url = {url}")
-
-    # Don't provide GitHub credentials to GitLab!
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers) as response:
-            result = await response.json()
-
-    if "detailed_status" in result and "details_path" in result["detailed_status"]:
-        url = f"{helpers.spack_gitlab_url}/{result['detailed_status']['details_path']}"
-        return f"I've started that [pipeline]({url}) for you!"
-
-    logger.info(f"Problem triggering pipeline on {branch}")
-    logger.info(result)
-    return "I had a problem triggering the pipeline."
+    task_q = work_queue.get_queue()
+    scheduled_job = task_q.enqueue(
+        run_pipeline_task,
+        event,
+        job_timeout=WORKER_JOB_TIMEOUT,
+        meta=job_metadata,
+        on_failure=report_rebuild_failure,
+    )
+    logger.info(f"Run pipeline job enqueued: {scheduled_job.id}")

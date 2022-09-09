@@ -27,12 +27,17 @@ spack_gitlab_url = "https://gitlab.spack.io"
 spack_upstream = "git@github.com:spack/spack"
 
 # Spack has project ID 2
-gitlab_spack_project_url = "https://gitlab.spack.io/api/v4/projects/2"
+gitlab_spack_project_url = os.environ.get(
+    "GITLAB_SPACK_PROJECT_URL", "https://gitlab.spack.io/api/v4/projects/2"
+)
 
 package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 
 # Bot name can be modified in the environment
 botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
+
+# Bucket where pr binary mirrors live
+pr_mirror_bucket = "spack-binaries-prs"
 
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
@@ -165,6 +170,16 @@ async def found(coroutine):
         if e.status_code == 404:
             return None
         raise
+
+
+async def post(url, headers):
+    """
+    Convenience method to create a new session and make a one-off
+    post request, given a url and headers to include in the request.
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers) as response:
+            return await response.json()
 
 
 def synchronous_http_request(url, data=None, token=None):
