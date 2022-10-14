@@ -1,6 +1,13 @@
+# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
+# Spack Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
 import os
+import urllib.parse
 
 import aiohttp
+import boto3
 from gidgethub import aiohttp as gh_aiohttp
 from sh.contrib import git
 import sh
@@ -18,6 +25,12 @@ logger = helpers.get_logger(__name__)
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 TASK_QUEUE_NAME = os.environ.get("TASK_QUEUE_NAME", "tasks")
+
+# If we don't provide a timeout, the default in RQ is 180 seconds
+WORKER_JOB_TIMEOUT = int(os.environ.get("WORKER_JOB_TIMEOUT", "21600"))
+
+# We can only make the pipeline request with a GITLAB TOKEN
+GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
 
 
 class WorkQueue:
@@ -41,23 +54,143 @@ def is_up_to_date(output):
     return "nothing to commit" in output
 
 
-def report_style_failure(job, connection, type, value, traceback):
+def post_failure_message(job, msg):
     """
     Get the api token from the job metadata, use it to post a comment on
     the PR containing the excepttion encountered and stack trace.
 
     """
-    user_msg = comments.get_style_error_message(type, value, traceback)
-
     token = None
     if "token" in job.meta:
         token = job.meta["token"]
 
     url = job.meta["post_comments_url"]
-    data = {"body": user_msg}
+    data = {"body": msg}
 
     helpers.synchronous_http_request(url, data=data, token=token)
-    logger.error(user_msg)
+    logger.error(msg)
+
+
+def report_style_failure(job, connection, type, value, traceback):
+    user_msg = comments.format_error_message(
+        "I encountered an error attempting to format style.", type, value, traceback
+    )
+    post_failure_message(job, user_msg)
+
+
+def report_rebuild_failure(job, connection, type, value, traceback):
+    user_msg = comments.format_error_message(
+        "I encountered an error attempting to rebuild everything.",
+        type,
+        value,
+        traceback,
+    )
+    post_failure_message(job, user_msg)
+
+
+async def run_pipeline_task(event):
+    """
+    Send an api request to gitlab telling it to run a pipeline on the
+    PR branch for the associated PR.  If the job metadata includes the
+    "rebuild_everything" key set to True, then this method will take the
+    extra couple steps to trigger a pipeline that will rebuild all specs
+    from source.  This involves clearing the dedicated mirror for the
+    associated PR, and setting the "SPACK_PRUNE_UNTOUCHED" env var to
+    False (so that pipeline generation doesn't trim jobs for specs it
+    thinks aren't touched by the PR).
+    """
+    job = get_current_job()
+    token = job.meta["token"]
+    rebuild_everything = job.meta.get("rebuild_everything")
+
+    async with aiohttp.ClientSession() as session:
+        gh = gh_aiohttp.GitHubAPI(session, REQUESTER, oauth_token=token)
+
+        # Early exit if not authenticated
+        if not GITLAB_TOKEN:
+            msg = "I'm not able to rebuild everything now because I don't have authentication."
+            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            return
+
+        # Get the pull request number
+        pr_url = event.data["issue"]["pull_request"]["url"]
+        *_, number = pr_url.split("/")
+
+        # We need the pull request branch
+        pr = await gh.getitem(pr_url)
+
+        # Get the sender of the PR - do they have write?
+        sender = event.data["sender"]["login"]
+        repository = event.data["repository"]
+        collaborators_url = repository["collaborators_url"]
+        author = pr["user"]["login"]
+
+        # If it's the PR author, we allow it
+        if author == sender:
+            logger.info(
+                f"Author {author} of PR #{number} is requesting a pipeline run."
+            )
+
+        # If they don't have write, we don't allow the command
+        elif not await helpers.found(
+            gh.getitem(collaborators_url, {"collaborator": sender})
+        ):
+            logger.info(f"Not found: {sender}")
+            msg = f"Sorry {sender}, I cannot do that for you. Only users with write can make this request!"
+            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            return
+
+        # We need the branch name plus number to assemble the GitLab CI
+        branch = pr["head"]["ref"]
+        pr_mirror_key = f"pr{number}_{branch}"
+        branch = urllib.parse.quote_plus(pr_mirror_key)
+
+        url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
+
+        if rebuild_everything:
+            # Rebuild everything is accomplished by telling spack pipeline generation
+            # not to do any of the normal pruning (DAG pruning, untouched spec pruning).
+            # But we also wipe out the contents of the PR-specific mirror.  See docs on
+            # use of variables:
+            #
+            #    https://docs.gitlab.com/ee/api/index.html#array-of-hashes
+            #
+            # Also see issue contradicting the docs:
+            #
+            #    https://gitlab.com/gitlab-org/gitlab/-/issues/23394
+            #
+            url = (
+                f"{url}&variables[][key]=SPACK_PRUNE_UNTOUCHED&variables[][value]=False"
+            )
+            url = f"{url}&variables[][key]=SPACK_PRUNE_UP_TO_DATE&variables[][value]=False"
+
+            logger.info(
+                f"Deleting s3://{helpers.pr_mirror_bucket}/{pr_mirror_key} for rebuild request by {sender}"
+            )
+
+            # Wipe out PR binary mirror contents
+            s3 = boto3.resource("s3")
+            bucket = s3.Bucket(helpers.pr_mirror_bucket)
+            bucket.objects.filter(Prefix=pr_mirror_key).delete()
+
+        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+
+        # Use helpers.post because it creates a new session (and here we are
+        # communicating with gitlab rather than github).
+        logger.info(f"{sender} triggering pipeline, url = {url}")
+        result = await helpers.post(url, headers)
+
+        detailed_status = result.get("detailed_status", {})
+        if "details_path" in detailed_status:
+            url = f"{helpers.spack_gitlab_url}/{detailed_status['details_path']}"
+            logger.info(f"Triggering pipeline on {branch}: {url}")
+            msg = f"I've started that [pipeline]({url}) for you!"
+            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+        else:
+            logger.info(f"Problem triggering pipeline on {branch}")
+            logger.info(result)
+            msg = "I had a problem triggering the pipeline."
+            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
 
 
 async def fix_style_task(event):
@@ -181,7 +314,7 @@ async def fix_style_task(event):
                 )
                 return
 
-            message += "\n\nI've updated the branch with isort fixes."
+            message += "\n\nI've updated the branch with style fixes."
 
             # Finally, try to push, update the message if permission not allowed
             try:

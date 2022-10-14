@@ -1,4 +1,5 @@
 aiohttp
+boto3
 gidgethub
 python_dotenv
 rq
