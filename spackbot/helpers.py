@@ -5,7 +5,6 @@
 
 
 import aiohttp
-import asyncio
 import contextlib
 import gidgethub
 import json

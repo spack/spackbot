@@ -130,3 +130,11 @@ async def label_pull_requests(event, gh, *args, session, **kwargs):
     Add labels to PRs based on which files were modified.
     """
     await handlers.add_labels(event, gh)
+
+
+@router.register("pull_request", action="closed")
+async def on_closed_pull_request(event, gh, *args, session, **kwargs):
+    """
+    Respond to the pull request closed
+    """
+    await handlers.close_pr_mirror(event, gh)
