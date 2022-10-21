@@ -8,13 +8,15 @@ import urllib.parse
 
 import aiohttp
 import boto3
+from datetime import datetime
 from gidgethub import aiohttp as gh_aiohttp
+import re
+
 from sh.contrib import git
 import sh
 
 from redis import Redis
 from rq import get_current_job, Queue
-
 
 import spackbot.comments as comments
 import spackbot.helpers as helpers
@@ -24,7 +26,9 @@ logger = helpers.get_logger(__name__)
 
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
-TASK_QUEUE_NAME = os.environ.get("TASK_QUEUE_NAME", "tasks")
+TASK_QUEUE_SHORT = os.environ.get("TASK_QUEUE_SHORT", "tasks")
+TASK_QUEUE_LONG = os.environ.get("TASK_QUEUE_LONG", "tasks_long")
+QUERY_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 # If we don't provide a timeout, the default in RQ is 180 seconds
 WORKER_JOB_TIMEOUT = int(os.environ.get("WORKER_JOB_TIMEOUT", "21600"))
@@ -32,19 +36,11 @@ WORKER_JOB_TIMEOUT = int(os.environ.get("WORKER_JOB_TIMEOUT", "21600"))
 # We can only make the pipeline request with a GITLAB TOKEN
 GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
 
-
-class WorkQueue:
-    def __init__(self):
-        logger.info(f"WorkQueue creating redis connection ({REDIS_HOST}, {REDIS_PORT})")
-        self.redis_conn = Redis(host=REDIS_HOST, port=REDIS_PORT)
-        # Name of queue workers use is defined in "workers/entrypoint.sh"
-        self.task_q = Queue(name=TASK_QUEUE_NAME, connection=self.redis_conn)
-
-    def get_queue(self):
-        return self.task_q
+redis = Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
-work_queue = WorkQueue()
+def get_queue(name):
+    return Queue(name=name, connection=redis)
 
 
 def is_up_to_date(output):
@@ -165,13 +161,16 @@ async def run_pipeline_task(event):
             url = f"{url}&variables[][key]=SPACK_PRUNE_UP_TO_DATE&variables[][value]=False"
 
             logger.info(
-                f"Deleting s3://{helpers.pr_mirror_bucket}/{pr_mirror_key} for rebuild request by {sender}"
+                f"Deleting {helpers.pr_mirror_base_url}/{pr_mirror_key} for rebuild request by {sender}"
             )
 
+            pr_url = helpers.s3_parse_url(
+                f"{helpers.pr_mirror_base_url}/{pr_mirror_key}"
+            )
             # Wipe out PR binary mirror contents
             s3 = boto3.resource("s3")
-            bucket = s3.Bucket(helpers.pr_mirror_bucket)
-            bucket.objects.filter(Prefix=pr_mirror_key).delete()
+            bucket = s3.Bucket(pr_url.get("bucket"))
+            bucket.objects.filter(Prefix=pr_url.get("prefix")).delete()
 
         headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 

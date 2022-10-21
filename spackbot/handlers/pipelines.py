@@ -8,7 +8,8 @@ import spackbot.helpers as helpers
 from spackbot.workers import (
     run_pipeline_task,
     report_rebuild_failure,
-    work_queue,
+    get_queue,
+    TASK_QUEUE_SHORT,
     WORKER_JOB_TIMEOUT,
 )
 
@@ -25,7 +26,7 @@ async def run_pipeline_rebuild_all(event, gh, **kwargs):
         "token": kwargs["token"],
     }
 
-    task_q = work_queue.get_queue()
+    task_q = get_queue(TASK_QUEUE_SHORT)
     scheduled_job = task_q.enqueue(
         run_pipeline_task,
         event,
@@ -45,7 +46,7 @@ async def run_pipeline(event, gh, **kwargs):
         "token": kwargs["token"],
     }
 
-    task_q = work_queue.get_queue()
+    task_q = get_queue(TASK_QUEUE_SHORT)
     scheduled_job = task_q.enqueue(
         run_pipeline_task,
         event,
