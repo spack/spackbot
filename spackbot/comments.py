@@ -150,7 +150,7 @@ Hi @{author}! I noticed that the following package(s) don't yet have maintainers
 
 Are you interested in adopting any of these package(s)? If so, simply add the following to the package class:
 ```python
-    maintainers = ['{author}']
+    maintainers = ["{author}"]
 ```
 If not, could you contact the developers of this package and see if they are interested? You can quickly see who has worked on a package with `spack blame`:
 
