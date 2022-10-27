@@ -137,4 +137,6 @@ async def on_closed_pull_request(event, gh, *args, session, **kwargs):
     """
     Respond to the pull request closed
     """
+    await handlers.close_pr_gitlab_branch(event, gh)
+
     await handlers.close_pr_mirror(event, gh)

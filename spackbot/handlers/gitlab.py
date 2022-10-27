@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import spackbot.helpers as helpers
+import os
 
 from spackbot.workers import (
     run_pipeline_task,
@@ -55,3 +56,19 @@ async def run_pipeline(event, gh, **kwargs):
         on_failure=report_rebuild_failure,
     )
     logger.info(f"Run pipeline job enqueued: {scheduled_job.id}")
+
+
+async def close_pr_gitlab_branch(event, gh):
+    payload = event.data
+
+    pr_number = payload["number"]
+    pr_branch = payload["pull_request"]["head"]["ref"]
+    pr_branch_name = f"pr{pr_number}_{pr_branch}"
+
+    url = helpers.gitlab_spack_project_url
+    url = f"{url}/repository/branches/{pr_branch_name}"
+
+    GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
+    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+
+    await helpers.delete(url, headers=headers)

@@ -190,6 +190,16 @@ async def post(url, headers):
             return await response.json()
 
 
+async def delete(url, headers):
+    """
+    Convenience method to create a new session and make a one-off
+    delete request, given a url and headers to include in the request.
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.delete(url, headers=headers) as response:
+            return await response.json()
+
+
 def synchronous_http_request(url, data=None, token=None):
     """
     Makes synchronous http request to the provided url, using the token for
