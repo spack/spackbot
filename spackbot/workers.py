@@ -427,11 +427,13 @@ def check_skip_job(job=None):
 
     job_type = job.meta.get("type", "-")
     skip = False
-
+    logger.debug(f"-- Checking skip job({job.id}): {job_type}")
     # Check if another job of this type is queued
     queue = get_queue(job.origin)
-    for job in queue.jobs:
-        if job.meta["type"] == job_type:
+    for _job in queue.jobs:
+        _job_type = _job.meta["type"]
+        logger.debug(f"-- job({_job.id}): {_job_type}")
+        if _job.meta["type"] == job_type:
             skip = True
             break
 
