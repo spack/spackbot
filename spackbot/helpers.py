@@ -17,6 +17,7 @@ from datetime import datetime
 from io import StringIO
 from sh import ErrorReturnCode
 from urllib.request import HTTPHandler, Request, build_opener
+from urllib.parse import urlparse
 
 
 """Shared function helpers that can be used across routes"
@@ -37,7 +38,16 @@ package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
 botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
 
 # Bucket where pr binary mirrors live
-pr_mirror_bucket = "spack-binaries-prs"
+pr_mirror_base_url = os.environ.get(
+    "PR_BINARIES_MIRROR_BASE_URL", "s3://spack-binaries-prs"
+)
+shared_pr_mirror_retire_after_days = os.environ.get(
+    "SHARED_PR_MIRROR_RETIRE_AFTER_DAYS", 7
+)
+pr_shared_mirror = "shared_pr_mirror"
+pr_expected_base = os.environ.get("PR_BINARIES_BASE_BRANCH", "develop")
+
+publish_mirror_base_url = "s3://spack-binaries"
 
 # Aliases for spackbot so spackbot doesn't respond to himself
 aliases = ["spack-bot", "spackbot", "spack-bot-develop", botname]
@@ -182,6 +192,16 @@ async def post(url, headers):
             return await response.json()
 
 
+async def delete(url, headers):
+    """
+    Convenience method to create a new session and make a one-off
+    delete request, given a url and headers to include in the request.
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.delete(url, headers=headers) as response:
+            return await response.json()
+
+
 def synchronous_http_request(url, data=None, token=None):
     """
     Makes synchronous http request to the provided url, using the token for
@@ -232,3 +252,23 @@ def synchronous_http_request(url, data=None, token=None):
     )
 
     return response
+
+
+def s3_parse_url(url, default_bucket="spack-binaries-prs", default_prefix="dummy"):
+    parsed = {
+        "bucket": default_bucket,
+        "prefix": default_prefix,
+    }
+
+    if type(url) == str:
+        url = urlparse(url)
+
+    if url.scheme == "s3":
+        parsed.update(
+            {
+                "bucket": url.netloc,
+                "prefix": url.path.strip("/"),
+            }
+        )
+
+    return parsed

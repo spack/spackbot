@@ -4,4 +4,4 @@
 # deployment.  REDIS_HOST and REDIS_PORT define the hostname/ip and port
 # of the redis instance, while TASK_QUEUE_NAME defines the name of the
 # queue used for communication between the webservice and workers.
-rq worker -u redis://${REDIS_HOST}:${REDIS_PORT} --with-scheduler ${TASK_QUEUE_NAME}
+rq worker -u redis://${REDIS_HOST}:${REDIS_PORT} --with-scheduler ${WORKER_TASK_QUEUE}

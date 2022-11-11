@@ -5,6 +5,10 @@ COPY workers/requirements.txt /source/requirements.txt
 RUN pip3 install --upgrade pip setuptools wheel && \
     pip3 install -r /source/requirements.txt
 
+COPY workers/install_aws.sh /source/install_aws.sh
+
+RUN . /source/install_aws.sh
+
 # make the worker trust GitHub's host key (and verify it)
 # If GitHub's fingerprint changes, update the code below with a new one:
 # https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints

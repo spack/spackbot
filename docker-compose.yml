@@ -4,6 +4,9 @@ services:
     restart: always
     env_file:
       - ./.env
+    environment:
+    - TASK_QUEUE_SHORT=devtasks
+    - TASK_QUEUE_LONG=devtasks_long
     build:
       context: .
       dockerfile: smee/Dockerfile
@@ -12,6 +15,23 @@ services:
     build:
       context: .
       dockerfile: workers/Dockerfile
+    environment:
+    - TASK_QUEUE_SHORT=devtasks
+    - TASK_QUEUE_LONG=devtasks_long
+    - WORKER_TASK_QUEUE=devtasks
+    env_file:
+      - ./.env
+    deploy:
+      replicas: 1
+
+  rq-long-worker:
+    build:
+      context: .
+      dockerfile: workers/Dockerfile
+    environment:
+    - TASK_QUEUE_SHORT=devtasks
+    - TASK_QUEUE_LONG=devtasks_long
+    - WORKER_TASK_QUEUE=devtasks_long
     env_file:
       - ./.env
     deploy:
