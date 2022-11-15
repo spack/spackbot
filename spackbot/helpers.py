@@ -192,6 +192,16 @@ async def post(url, headers):
             return await response.json()
 
 
+async def get(url, headers):
+    """
+    Convenience method to create a new session and make a one-off
+    get request, given a url and headers to include in the request.
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            return await response.json()
+
+
 async def delete(url, headers):
     """
     Convenience method to create a new session and make a one-off

@@ -50,6 +50,34 @@ def is_up_to_date(output):
     return "nothing to commit" in output
 
 
+def gitlab_has_latest(pr, gitlab_commit):
+    """
+    Compare the PR head sha to the parents of the commit pushed to gitlab.
+
+    Arguments:
+        pr (obj): Response from github api for the PR
+        gitlab_commit (obj): Response from gitlab api for repo commit
+
+    Returns: True if the PR head is present in the gitlab merge commit,
+        False otherwise.
+    """
+    if not gitlab_commit:
+        return False
+
+    if "parent_ids" not in gitlab_commit:
+        return False
+
+    parent_ids = gitlab_commit["parent_ids"]
+
+    if not isinstance(parent_ids, list):
+        return False
+
+    if pr["head"]["sha"] not in parent_ids:
+        return False
+
+    return True
+
+
 def post_failure_message(job, msg):
     """
     Get the api token from the job metadata, use it to post a comment on
@@ -136,10 +164,21 @@ async def run_pipeline_task(event):
             await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
             return
 
-        # We need the branch name plus number to assemble the GitLab CI
+        # We need the branch name plus number to assemble the GitLab CI api requests
         branch = pr["head"]["ref"]
         pr_mirror_key = f"pr{number}_{branch}"
         branch = urllib.parse.quote_plus(pr_mirror_key)
+
+        # Get the commit for the PR branch from GitLab to see what's been pushed there
+        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+        commit_url = f"{helpers.gitlab_spack_project_url}/repository/commits/{branch}"
+        gitlab_commit = await gh.get(commit_url, headers)
+
+        # If gitlab doesn't have the latest PR head sha from GitHub, we can't run the
+        # pipeline.
+        if not gitlab_has_latest(pr, gitlab_commit):
+            msg = f"I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now."
+            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
 
         url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
 
@@ -171,8 +210,6 @@ async def run_pipeline_task(event):
             s3 = boto3.resource("s3")
             bucket = s3.Bucket(pr_url.get("bucket"))
             bucket.objects.filter(Prefix=pr_url.get("prefix")).delete()
-
-        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
 
         # Use helpers.post because it creates a new session (and here we are
         # communicating with gitlab rather than github).
