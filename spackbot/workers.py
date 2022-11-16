@@ -179,6 +179,7 @@ async def run_pipeline_task(event):
         if not gitlab_has_latest(pr, gitlab_commit):
             msg = f"I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now."
             await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            return
 
         url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
 
