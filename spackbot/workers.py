@@ -148,7 +148,7 @@ async def run_pipeline_task(event):
 
         # Early exit if not authenticated
         if not GITLAB_TOKEN:
-            msg = "I'm not able to rebuild everything now because I don't have authentication."
+            msg = "I'm not able to run the pipeline now because I don't have authentication."
             await gh.post(comments_url, {}, data={"body": msg})
             return
 
