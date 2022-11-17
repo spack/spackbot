@@ -62,17 +62,25 @@ def gitlab_has_latest(pr, gitlab_commit):
         False otherwise.
     """
     if not gitlab_commit:
+        logger.debug("Did not get a gitlab_commit")
         return False
 
     if "parent_ids" not in gitlab_commit:
+        logger.debug("no parent_ids in response")
+        logger.debug(gitlab_commit)
         return False
 
     parent_ids = gitlab_commit["parent_ids"]
 
     if not isinstance(parent_ids, list):
+        logger.debug('parent_ids is not a list')
+        logger.debug(gitlab_commit)
         return False
 
-    if pr["head"]["sha"] not in parent_ids:
+    pr_head_sha = pr["head"]["sha"]
+
+    if pr_head_sha not in parent_ids:
+        logger.debug(f"shas did not match, PR head = {pr_head_sha}, parent_ids = {parent_ids}")
         return False
 
     return True
