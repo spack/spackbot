@@ -102,9 +102,9 @@ def report_style_failure(job, connection, type, value, traceback):
     post_failure_message(job, user_msg)
 
 
-def report_rebuild_failure(job, connection, type, value, traceback):
+def report_pipeline_failure(job, connection, type, value, traceback):
     user_msg = comments.format_error_message(
-        "I encountered an error attempting to rebuild everything.",
+        "I encountered an error attempting to run the pipeline.",
         type,
         value,
         traceback,

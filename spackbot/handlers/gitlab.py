@@ -8,7 +8,7 @@ import os
 
 from spackbot.workers import (
     run_pipeline_task,
-    report_rebuild_failure,
+    report_pipeline_failure,
     get_queue,
     TASK_QUEUE_SHORT,
     WORKER_JOB_TIMEOUT,
@@ -33,7 +33,7 @@ async def run_pipeline_rebuild_all(event, gh, **kwargs):
         event,
         job_timeout=WORKER_JOB_TIMEOUT,
         meta=job_metadata,
-        on_failure=report_rebuild_failure,
+        on_failure=report_pipeline_failure,
     )
     logger.info(f"Rebuild everything job enqueued: {scheduled_job.id}")
 
@@ -53,7 +53,7 @@ async def run_pipeline(event, gh, **kwargs):
         event,
         job_timeout=WORKER_JOB_TIMEOUT,
         meta=job_metadata,
-        on_failure=report_rebuild_failure,
+        on_failure=report_pipeline_failure,
     )
     logger.info(f"Run pipeline job enqueued: {scheduled_job.id}")
 
