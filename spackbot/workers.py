@@ -50,37 +50,46 @@ def is_up_to_date(output):
     return "nothing to commit" in output
 
 
-def gitlab_has_latest(pr, gitlab_commit):
+async def check_gitlab_has_latest(branch_name, pr_head_sha, gh, comments_url):
     """
-    Compare the PR head sha to the parents of the commit pushed to gitlab.
+    Given the name of the branch supposedly pushed to gitlab, check if it
+    is the latest revision found on github.  If gitlab doesn't have the
+    latest, the pipeline cannot be run, so post a comment on the PR to
+    explain why, if that is the case.
 
     Arguments:
-        pr (obj): Response from github api for the PR
-        gitlab_commit (obj): Response from gitlab api for repo commit
+        branch_name (str): Name of branch to query on GitLab for latest commit
+        pr_head_sha (str): SHA of PR head from GitHub
+        gh: GitHubAPI object for posting comments on the PR
+        comments_url (str): URL to post any error message to
 
-    Returns: True if the PR head is present in the gitlab merge commit,
-        False otherwise.
+    Returns: True if gitlab has the latest revsion, False otherwise.
     """
-    if not gitlab_commit:
-        logger.debug("Did not get a gitlab_commit")
-        return False
+    # Get the commit for the PR branch from GitLab to see what's been pushed there
+    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+    commit_url = f"{helpers.gitlab_spack_project_url}/repository/commits/{branch_name}"
+    gitlab_commit = await helpers.get(commit_url, headers)
 
-    if "parent_ids" not in gitlab_commit:
-        logger.debug("no parent_ids in response")
-        logger.debug(gitlab_commit)
+    error_msg = f"I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now."
+
+    if (
+        not gitlab_commit
+        or "parent_ids" not in gitlab_commit
+    ):
+        details = f"Unexpected response from gitlab: {gitlab_commit}"
+        logger.debug(f"Problem with {branch_name}: {details}")
+        msg = comments.format_generic_details_msg(error_msg, details)
+        await gh.post(comments_url, {}, data={"body": msg})
         return False
 
     parent_ids = gitlab_commit["parent_ids"]
 
-    if not isinstance(parent_ids, list):
-        logger.debug('parent_ids is not a list')
-        logger.debug(gitlab_commit)
-        return False
-
-    pr_head_sha = pr["head"]["sha"]
-
     if pr_head_sha not in parent_ids:
-        logger.debug(f"shas did not match, PR head = {pr_head_sha}, parent_ids = {parent_ids}")
+        pids = [pid[:7] for pid in parent_ids]
+        details = f"pr head: {pr_head_sha[:7]}, gitlab commit parents: {pids}"
+        logger.debug(f"Problem with {branch_name}: {details}")
+        msg = comments.format_generic_details_msg(error_msg, details)
+        await gh.post(comments_url, {}, data={"body": msg})
         return False
 
     return True
@@ -138,10 +147,12 @@ async def run_pipeline_task(event):
     async with aiohttp.ClientSession() as session:
         gh = gh_aiohttp.GitHubAPI(session, REQUESTER, oauth_token=token)
 
+        comments_url = event.data["issue"]["comments_url"]
+
         # Early exit if not authenticated
         if not GITLAB_TOKEN:
             msg = "I'm not able to rebuild everything now because I don't have authentication."
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            await gh.post(comments_url, {}, data={"body": msg})
             return
 
         # Get the pull request number
@@ -169,7 +180,7 @@ async def run_pipeline_task(event):
         ):
             logger.info(f"Not found: {sender}")
             msg = f"Sorry {sender}, I cannot do that for you. Only users with write can make this request!"
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            await gh.post(comments_url, {}, data={"body": msg})
             return
 
         # We need the branch name plus number to assemble the GitLab CI api requests
@@ -177,16 +188,10 @@ async def run_pipeline_task(event):
         pr_mirror_key = f"pr{number}_{branch}"
         branch = urllib.parse.quote_plus(pr_mirror_key)
 
-        # Get the commit for the PR branch from GitLab to see what's been pushed there
-        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
-        commit_url = f"{helpers.gitlab_spack_project_url}/repository/commits/{branch}"
-        gitlab_commit = await helpers.get(commit_url, headers)
-
         # If gitlab doesn't have the latest PR head sha from GitHub, we can't run the
         # pipeline.
-        if not gitlab_has_latest(pr, gitlab_commit):
-            msg = f"I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now."
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+        head_sha = pr["head"]["sha"]
+        if not await check_gitlab_has_latest(branch, head_sha, gh, comments_url):
             return
 
         url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
@@ -222,6 +227,7 @@ async def run_pipeline_task(event):
 
         # Use helpers.post because it creates a new session (and here we are
         # communicating with gitlab rather than github).
+        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
         logger.info(f"{sender} triggering pipeline, url = {url}")
         result = await helpers.post(url, headers)
 
@@ -230,12 +236,12 @@ async def run_pipeline_task(event):
             url = f"{helpers.spack_gitlab_url}/{detailed_status['details_path']}"
             logger.info(f"Triggering pipeline on {branch}: {url}")
             msg = f"I've started that [pipeline]({url}) for you!"
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            await gh.post(comments_url, {}, data={"body": msg})
         else:
             logger.info(f"Problem triggering pipeline on {branch}")
             logger.info(result)
             msg = "I had a problem triggering the pipeline."
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            await gh.post(comments_url, {}, data={"body": msg})
 
 
 async def fix_style_task(event):

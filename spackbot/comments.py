@@ -88,6 +88,23 @@ Stack trace:
 """
 
 
+def format_generic_details_msg(msg, details):
+    """
+    Format a comment to post on a PR.  The message will be printed first,
+    followed by a collapsible details message formatted with code style.
+    """
+    return f"""
+{msg}
+<details>
+<summary><b>Details</b></summary>
+
+```bash
+{details}
+```
+</details>
+"""
+
+
 commands_message = f"""
 You can interact with me in many ways!
 
