@@ -172,7 +172,7 @@ async def run_pipeline_task(event):
         # Get the commit for the PR branch from GitLab to see what's been pushed there
         headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
         commit_url = f"{helpers.gitlab_spack_project_url}/repository/commits/{branch}"
-        gitlab_commit = await gh.get(commit_url, headers)
+        gitlab_commit = await helpers.get(commit_url, headers)
 
         # If gitlab doesn't have the latest PR head sha from GitHub, we can't run the
         # pipeline.
