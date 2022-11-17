@@ -72,10 +72,7 @@ async def check_gitlab_has_latest(branch_name, pr_head_sha, gh, comments_url):
 
     error_msg = f"I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now."
 
-    if (
-        not gitlab_commit
-        or "parent_ids" not in gitlab_commit
-    ):
+    if not gitlab_commit or "parent_ids" not in gitlab_commit:
         details = f"Unexpected response from gitlab: {gitlab_commit}"
         logger.debug(f"Problem with {branch_name}: {details}")
         msg = comments.format_generic_details_msg(error_msg, details)
