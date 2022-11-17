@@ -70,7 +70,7 @@ async def check_gitlab_has_latest(branch_name, pr_head_sha, gh, comments_url):
     commit_url = f"{helpers.gitlab_spack_project_url}/repository/commits/{branch_name}"
     gitlab_commit = await helpers.get(commit_url, headers)
 
-    error_msg = f"I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now."
+    error_msg = "I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now."
 
     if not gitlab_commit or "parent_ids" not in gitlab_commit:
         details = f"Unexpected response from gitlab: {gitlab_commit}"
