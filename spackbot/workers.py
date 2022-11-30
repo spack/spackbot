@@ -50,6 +50,48 @@ def is_up_to_date(output):
     return "nothing to commit" in output
 
 
+async def check_gitlab_has_latest(branch_name, pr_head_sha, gh, comments_url):
+    """
+    Given the name of the branch supposedly pushed to gitlab, check if it
+    is the latest revision found on github.  If gitlab doesn't have the
+    latest, the pipeline cannot be run, so post a comment on the PR to
+    explain why, if that is the case.
+
+    Arguments:
+        branch_name (str): Name of branch to query on GitLab for latest commit
+        pr_head_sha (str): SHA of PR head from GitHub
+        gh: GitHubAPI object for posting comments on the PR
+        comments_url (str): URL to post any error message to
+
+    Returns: True if gitlab has the latest revsion, False otherwise.
+    """
+    # Get the commit for the PR branch from GitLab to see what's been pushed there
+    headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
+    commit_url = f"{helpers.gitlab_spack_project_url}/repository/commits/{branch_name}"
+    gitlab_commit = await helpers.get(commit_url, headers)
+
+    error_msg = comments.cannot_run_pipeline_comment
+
+    if not gitlab_commit or "parent_ids" not in gitlab_commit:
+        details = f"Unexpected response from gitlab: {gitlab_commit}"
+        logger.debug(f"Problem with {branch_name}: {details}")
+        msg = comments.format_generic_details_msg(error_msg, details)
+        await gh.post(comments_url, {}, data={"body": msg})
+        return False
+
+    parent_ids = gitlab_commit["parent_ids"]
+
+    if pr_head_sha not in parent_ids:
+        pids = [pid[:7] for pid in parent_ids]
+        details = f"pr head: {pr_head_sha[:7]}, gitlab commit parents: {pids}"
+        logger.debug(f"Problem with {branch_name}: {details}")
+        msg = comments.format_generic_details_msg(error_msg, details)
+        await gh.post(comments_url, {}, data={"body": msg})
+        return False
+
+    return True
+
+
 def post_failure_message(job, msg):
     """
     Get the api token from the job metadata, use it to post a comment on
@@ -74,9 +116,9 @@ def report_style_failure(job, connection, type, value, traceback):
     post_failure_message(job, user_msg)
 
 
-def report_rebuild_failure(job, connection, type, value, traceback):
+def report_pipeline_failure(job, connection, type, value, traceback):
     user_msg = comments.format_error_message(
-        "I encountered an error attempting to rebuild everything.",
+        "I encountered an error attempting to run the pipeline.",
         type,
         value,
         traceback,
@@ -102,10 +144,12 @@ async def run_pipeline_task(event):
     async with aiohttp.ClientSession() as session:
         gh = gh_aiohttp.GitHubAPI(session, REQUESTER, oauth_token=token)
 
+        comments_url = event.data["issue"]["comments_url"]
+
         # Early exit if not authenticated
         if not GITLAB_TOKEN:
-            msg = "I'm not able to rebuild everything now because I don't have authentication."
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            msg = "I'm not able to run the pipeline now because I don't have authentication."
+            await gh.post(comments_url, {}, data={"body": msg})
             return
 
         # Get the pull request number
@@ -133,13 +177,19 @@ async def run_pipeline_task(event):
         ):
             logger.info(f"Not found: {sender}")
             msg = f"Sorry {sender}, I cannot do that for you. Only users with write can make this request!"
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            await gh.post(comments_url, {}, data={"body": msg})
             return
 
-        # We need the branch name plus number to assemble the GitLab CI
+        # We need the branch name plus number to assemble the GitLab CI api requests
         branch = pr["head"]["ref"]
         pr_mirror_key = f"pr{number}_{branch}"
         branch = urllib.parse.quote_plus(pr_mirror_key)
+
+        # If gitlab doesn't have the latest PR head sha from GitHub, we can't run the
+        # pipeline.
+        head_sha = pr["head"]["sha"]
+        if not await check_gitlab_has_latest(branch, head_sha, gh, comments_url):
+            return
 
         url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
 
@@ -172,10 +222,9 @@ async def run_pipeline_task(event):
             bucket = s3.Bucket(pr_url.get("bucket"))
             bucket.objects.filter(Prefix=pr_url.get("prefix")).delete()
 
-        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
-
         # Use helpers.post because it creates a new session (and here we are
         # communicating with gitlab rather than github).
+        headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
         logger.info(f"{sender} triggering pipeline, url = {url}")
         result = await helpers.post(url, headers)
 
@@ -184,12 +233,12 @@ async def run_pipeline_task(event):
             url = f"{helpers.spack_gitlab_url}/{detailed_status['details_path']}"
             logger.info(f"Triggering pipeline on {branch}: {url}")
             msg = f"I've started that [pipeline]({url}) for you!"
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            await gh.post(comments_url, {}, data={"body": msg})
         else:
             logger.info(f"Problem triggering pipeline on {branch}")
             logger.info(result)
             msg = "I had a problem triggering the pipeline."
-            await gh.post(event.data["issue"]["comments_url"], {}, data={"body": msg})
+            await gh.post(comments_url, {}, data={"body": msg})
 
 
 async def fix_style_task(event):

@@ -88,6 +88,23 @@ Stack trace:
 """
 
 
+def format_generic_details_msg(msg, details):
+    """
+    Format a comment to post on a PR.  The message will be printed first,
+    followed by a collapsible details message formatted with code style.
+    """
+    return f"""
+{msg}
+<details>
+<summary><b>Details</b></summary>
+
+```bash
+{details}
+```
+</details>
+"""
+
+
 commands_message = f"""
 You can interact with me in many ways!
 
@@ -160,4 +177,12 @@ $ spack blame {first_package_without_maintainer}
 Thank you for your help! Please don't add maintainers without their consent.
 
 _You don't have to be a Spack expert or package developer in order to be a "maintainer," it just gives us a list of users willing to review PRs or debug issues relating to this package. A package can have multiple maintainers; just add a list of GitHub handles of anyone who wants to volunteer._
+"""
+
+cannot_run_pipeline_comment = """\
+I'm sorry, gitlab does not have your latest revision yet, I can't run that pipeline for you right now.
+
+One likely possibility is that your PR pipeline has been temporarily [deferred](https://github.com/spack/spack-infrastructure/blob/main/docs/deferred_pipelines.md), in which case, it is awaiting a `develop` pipeline, and will be run when that finishes.
+
+Please check the gitlab commit status message to see if more information is available.
 """
