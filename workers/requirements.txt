@@ -9,3 +9,5 @@ sh
 mypy
 flake8
 isort
+black
+clingo
