@@ -23,5 +23,5 @@ jobs:
         with:
           message: 'Please format your code with [black](https://black.readthedocs.io): `black spackbot`.'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
       # TODO add tests here?

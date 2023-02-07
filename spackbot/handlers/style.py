@@ -28,7 +28,6 @@ async def style_comment(event, gh):
     repository = event.data["repository"]["full_name"]  # "spack-test/spack"
     for pr in event.data["check_run"]["pull_requests"]:  # []
         if repository in pr["url"]:
-
             number = pr["url"].split("/")[-1]
             comments_url = (
                 f"https://api.github.com/repos/{repository}/issues/{number}/comments"

@@ -304,7 +304,6 @@ async def fix_style_task(event):
 
         # At this point, we can clone the repository and make the change
         with helpers.temp_dir() as cwd:
-
             # Clone a fresh spack develop to use for spack style
             git.clone(helpers.spack_upstream, "spack-develop")
 

@@ -116,7 +116,6 @@ async def add_issue_maintainers(event, gh, package_list):
 
     # If we match a package in the title, look for maintainers to ping
     if packages:
-
         # Remove extra spacing that helped search
         packages = [x.strip() for x in packages]
 
@@ -130,7 +129,6 @@ async def add_issue_maintainers(event, gh, package_list):
             from sh import spack
 
             for package in packages:
-
                 # Query maintainers from develop
                 found_maintainers = spack(
                     "maintainers", package, _ok_code=(0, 1)
