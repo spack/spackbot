@@ -32,7 +32,7 @@ async def parse_maintainers_from_patch(gh, pull_request):
         pkg = re.search(r"/([^/]+)/package.py", filename).group(1)
 
         code = file["patch"]
-        arrays = re.findall("maintainers\s*=\s*\[[^\]]*\]", code)  # noqa
+        arrays = re.findall(r"maintainers(\(|\s*=\s*\[)[^\]\)]*(\)|\])", code)
         for array in arrays:
             file_maintainers = re.findall("['\"][^'\"]*['\"]", array)
             for m in file_maintainers:
@@ -108,7 +108,7 @@ async def add_issue_maintainers(event, gh, package_list):
     title = " " + event.data["issue"]["title"].lower() + " "
 
     # Replace special characters with spaces
-    title = re.sub("[!#%^*(){}:_&$+@\/\[\]]+", " ", title)  # noqa
+    title = re.sub(r"[!#%^*(){}:_&$+@\/\[\]]+", " ", title)
 
     # Does the title have a known package (must have space before and after)
     package_regex = "( %s )" % " | ".join(package_list)
