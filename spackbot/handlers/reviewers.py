@@ -32,7 +32,7 @@ async def parse_maintainers_from_patch(gh, pull_request):
         pkg = re.search(r"/([^/]+)/package.py", filename).group(1)
 
         code = file["patch"]
-        arrays = re.findall(r"maintainers(\(|\s*=\s*\[)[^\]\)]*(\)|\])", code)
+        arrays = re.findall(r"maintainers(?:\(|\s*=\s*\[)[^\]\)]*(?:\)|\])", code)
         for array in arrays:
             file_maintainers = re.findall("['\"][^'\"]*['\"]", array)
             for m in file_maintainers:
