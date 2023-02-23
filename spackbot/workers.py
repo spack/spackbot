@@ -38,6 +38,12 @@ GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")
 
 redis = Redis(host=REDIS_HOST, port=REDIS_PORT)
 
+allow_edits_url = (
+    "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/"
+    "allowing-changes-to-a-pull-request-branch-created-from-a-fork"
+    "#enabling-repository-maintainer-permissions-on-existing-pull-requests"
+)
+
 
 def get_queue(name):
     return Queue(name=name, connection=redis)
@@ -370,7 +376,11 @@ async def fix_style_task(event):
                 )
             except Exception:
                 logger.error("Unable to push to branch")
-                message += "\n\nBut it looks like I'm not able to push to your branch. 😭️ Did you check maintainer can edit when you opened the PR?"
+                message += (
+                    f"\n\nBut it looks like I'm not able to push to your branch. 😭️"
+                    f" Did you check [Allow edits from maintainers]({allow_edits_url})"
+                    f" when you opened the PR?"
+                )
 
             await gh.post(
                 event.data["issue"]["comments_url"], {}, data={"body": message}
