@@ -46,7 +46,7 @@
               <div class="side-title-item">\
                 <img src="../assets/img/spackbot.svg" width=\"150px\" /> \
               </div>',
-        repo: 'https://github.com/spack/spack-bot',
+        repo: 'https://github.com/spack/spackbot',
         auto2top: true,
         executeScript: true,
         maxLevel: 3,
@@ -58,7 +58,7 @@
         plugins: [
         function(hook, vm) {
             hook.beforeEach(function(html) {
-              url = 'https://github.com/spack/spack-bot/blob/main/' + vm.route.file;
+              url = 'https://github.com/spack/spackbot/blob/main/' + vm.route.file;
               var editHtml = '[:memo: Edit Document](' + url + ')\n';
               return (
                 editHtml +

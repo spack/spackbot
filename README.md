@@ -32,10 +32,10 @@ option.
 All new contributions must be made under both the MIT and Apache-2.0
 licenses.
 
-See [LICENSE-MIT](https://github.com/spack/spack-bot/blob/master/LICENSE-MIT),
-[LICENSE-APACHE](https://github.com/spack/spack-bot/blob/master/LICENSE-APACHE),
-[COPYRIGHT](https://github.com/spack/spack-bot/blob/master/COPYRIGHT), and
-[NOTICE](https://github.com/spack/spack-bot/blob/master/NOTICE) for details.
+See [LICENSE-MIT](https://github.com/spack/spackbot/blob/master/LICENSE-MIT),
+[LICENSE-APACHE](https://github.com/spack/spackbot/blob/master/LICENSE-APACHE),
+[COPYRIGHT](https://github.com/spack/spackbot/blob/master/COPYRIGHT), and
+[NOTICE](https://github.com/spack/spackbot/blob/master/NOTICE) for details.
 
 SPDX-License-Identifier: (Apache-2.0 OR MIT)
 

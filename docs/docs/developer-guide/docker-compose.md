@@ -31,9 +31,9 @@ The other secrets we will populate after we register the app, discussed next.
 You should next register a [GitHub App](https://github.com/settings/apps) under your username.
 You'll first need to create a  [Follow this link](https://github.com/settings/apps) and click "New GitHub App."
 
-#### Create 
+#### Create
  - **GitHub App Name**: can be whatever you like, SpackBot Develop for example.
- - **Homepage URL**: you can put the repository here, https://github.com/spack/spack-bot
+ - **Homepage URL**: you can put the repository here, https://github.com/spack/spackbot
  - You don't need to identify or authorize users.
  - **Webhook URL** enter your smee url
  - **Repo Permissions** You want to add:
@@ -56,9 +56,9 @@ You'll first need to create a  [Follow this link](https://github.com/settings/ap
    - deployment status
  - It's safer to select to run only on your user account.
 
-#### Post Create 
+#### Post Create
 After you create the App you will be redirected to a screen that has the app ID and
-secrets. Make a private key, and copy it to the [spackbot](https://github.com/spack/spack-bot/tree/main/spackbot) directory
+secrets. Make a private key, and copy it to the [spackbot](https://github.com/spack/spackbot/tree/main/spackbot) directory
 for the app to see, named as `spack-bot-develop.private-key.pem`.
 
 ```bash
@@ -81,7 +81,7 @@ In order for spackbot to be able to push to pull requests (and otherwise have wr
 you'll need to provide credentials to the server associated with a GitHub bot account (e.g., [spackbot](https://github.com/spackbot))
 and then bind them to the container here for use. If you are unable to do this, you should comment
 out the volume in the `docker-compose.yml` (and assume that style fixes, rebases, and similar commands that require
-write will not work). 
+write will not work).
 
 ```yaml
 volumes:
@@ -147,7 +147,7 @@ spackbot_1  | (Press CTRL+C to quit)
 ```
 
 Now you can develop/make changes, and then restart the containers to restart the
-server. Since [spackbot](https://github.com/spack/spack-bot/tree/main/spackbot) is bound to the app install location in the container,
+server. Since [spackbot](https://github.com/spack/spackbot/tree/main/spackbot) is bound to the app install location in the container,
 your app will update with changes.
 
 Next you would want to [install the app](install) so you can interact with a pull request
@@ -155,7 +155,7 @@ and see the result on your local server.
 
 ## 5. Organization
 
-Different events are represented in [spackbot/routes.py](https://github.com/spack/spack-bot/tree/main/spackbot/routes.py).
+Different events are represented in [spackbot/routes.py](https://github.com/spack/spackbot/tree/main/spackbot/routes.py).
 For example, there is one common entrypoint for spackbot to respond to comments,
 or the opening of a pull request, or a check run result. So you should first
 see if there is a router that already fits your purpose.
@@ -164,8 +164,8 @@ see if there is a router that already fits your purpose.
 2. If not, you can add a new router.
 
 In most complex cases, the routers pass on execution to a handler, and handlers
-are in [spackbot/handlers](https://github.com/spack/spack-bot/tree/main/spackbot/handlers). For each handler, you can write
+are in [spackbot/handlers](https://github.com/spack/spackbot/tree/main/spackbot/handlers). For each handler, you can write
 whatever functionality you need in the submodule (e.g., `handlers.style`) and
 then import the function that is needed by the router in `__init__`. Helpers
-or variables shared amongst modules should go into [helpers.py](https://github.com/spack/spack-bot/tree/main/spackbot/helpers.py),
-and comments should go into [comments.py](https://github.com/spack/spack-bot/tree/main/spackbot/comments.py).
+or variables shared amongst modules should go into [helpers.py](https://github.com/spack/spackbot/tree/main/spackbot/helpers.py),
+and comments should go into [comments.py](https://github.com/spack/spackbot/tree/main/spackbot/comments.py).

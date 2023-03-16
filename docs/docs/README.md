@@ -11,7 +11,7 @@ Hi I'm spackbot! 👋  I can help you with [spack](https://github.com/spack/spac
 - [Packages](#packages)
 
 ## Quick Start
- 
+
 Here are some quick commands to get you started, and you can check out more detailed [developer guide](developer-guide/developer-guide) or [user guide](user-guide/user-guide). There are several different was you might want to interact with me, and other ways I will interact with you!
 
 ### Say hello
@@ -57,7 +57,7 @@ Don't you love GitHub labels? I do! Whenever you open a pull request, I'll take 
 Are you opening a pull request for a package? I'll help to find and ping maintainers for it! And if there aren't any, I'll start a discussion to figure out who might be able to do it.
 
 And I just might have some other commands and jokes up my sleeve! Want to learn more? Browse the links on the left navigation, or
-<a href="https://github.com/spack/spack-bot" target="_blank">ask me a question</a>. Thanks for stopping by! 😉
+<a href="https://github.com/spack/spackbot" target="_blank">ask me a question</a>. Thanks for stopping by! 😉
 
 ### Packages
 
