@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "spack-bot"
+name = "spackbot"
 version = "0.0.1"
 description = "Bot to automate tasks for the Spack project (https://github.com/spack/spack)"
 authors = [

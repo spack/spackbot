@@ -116,7 +116,7 @@ You can interact with me in many ways!
 - `{helpers.botname} maintainers` or `{helpers.botname} request review`: to look for and assign reviewers for the pull request.
 
 I'll also help to label your pull request and assign reviewers!
-If you need help or see there might be an issue with me, open an issue [here](https://github.com/spack/spack-bot/issues)
+If you need help or see there might be an issue with me, open an issue [here](https://github.com/spack/spackbot/issues)
 """
 
 style_message = f"""
