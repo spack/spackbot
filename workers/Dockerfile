@@ -15,7 +15,7 @@ RUN . /source/install_aws.sh
 # and rebuild this container.
 RUN ssh-keyscan -t rsa github.com 2>/dev/null > github.key \
   && fingerprint=$(ssh-keygen -lf ./github.key | grep -o 'SHA256:[^ ]*') \
-  && if [ "$fingerprint" != "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8" ]; \
+  && if [ "$fingerprint" != "SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s" ]; \
      then echo "GitHub key is invalid!" && exit 1; \
      fi \
   && mkdir -p /root/.ssh \
