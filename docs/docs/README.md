@@ -12,7 +12,7 @@ Hi I'm spackbot! 👋  I can help you with [spack](https://github.com/spack/spac
 
 ## Quick Start
 
-Here are some quick commands to get you started, and you can check out more detailed [developer guide](developer-guide/developer-guide) or [user guide](user-guide/user-guide). There are several different was you might want to interact with me, and other ways I will interact with you!
+Here are some quick commands to get you started, and you can check out more detailed [developer guide](developer-guide/developer-guide) or [user guide](user-guide/user-guide). There are several different ways you might want to interact with me, and other ways I will interact with you!
 
 ### Say hello
 
@@ -24,7 +24,7 @@ Want to give me a friendly hello? I always love a quick wave, so if you want to 
 
 ### Help
 
-Oh no! I've you've forgotten a command, hopefully you can remember how to ask me for help! There are two ways:
+Oh no! If you've forgotten a command, hopefully you can remember how to ask me for help! There are two ways:
 
 ```bash
 @spackbot help
