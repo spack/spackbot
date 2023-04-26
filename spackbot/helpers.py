@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 """Shared function helpers that can be used across routes"
 """
 
+spack_builds_system_dir = "./spack/lib/spack/spack/build_systems"
 spack_develop_url = "https://github.com/spack/spack"
 spack_gitlab_url = "https://gitlab.spack.io"
 spack_upstream = "git@github.com:spack/spack"
