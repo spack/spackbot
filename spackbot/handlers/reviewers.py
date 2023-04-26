@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import collections
 import os
 import re
 
@@ -61,7 +62,9 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
     without_maintainers = []
 
     # parse any added/removed maintainers from the PR. Do NOT run spack from the PR
-    patch_maintainers, parents = await parse_maintainers_info_from_patch(gh, pull_request)
+    patch_maintainers, parents = await parse_maintainers_info_from_patch(
+        gh, pull_request
+    )
     logger.info(f"Maintainers from patch: {patch_maintainers}")
     logger.info(f"Classes from patch: {parents}")
 
@@ -309,19 +312,22 @@ def parse_build_system_maintainers():
         #
         # Simplifying assumption: each class inherits from only one parent.
         with open(os.path.join(helpers.spack_build_systems_dir, filename)) as f:
-             for ln in f:
-                 match = re.search(r"^class ([^\(]+)\(([^\)]*)", ln)
-                 if match:
-                     cls = match.group(1)
-                     parent = match.group(2)
-                     classes[cls] = parent
-                     inherited = maintainers.get(parent, set())
-                     if inherited:
-                         maintainers[cls] = inherited
-                 else:
-                     match = re.search(r"maintainers\(([^\)]*)\)", ln)
-                     if match:
-                         users = [m.strip() for m in match.group(1).replace("\"", "").split(",")]
-                         maintainers[cls] = set(users)
+            for ln in f:
+                match = re.search(r"^class ([^\(]+)\(([^\)]*)", ln)
+                if match:
+                    cls = match.group(1)
+                    parent = match.group(2)
+                    classes[cls] = parent
+                    inherited = maintainers.get(parent, set())
+                    if inherited:
+                        maintainers[cls] = inherited
+                else:
+                    match = re.search(r"maintainers\(([^\)]*)\)", ln)
+                    if match:
+                        users = [
+                            m.strip()
+                            for m in match.group(1).replace('"', "").split(",")
+                        ]
+                        maintainers[cls] = set(users)
 
     return maintainers
