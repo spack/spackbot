@@ -93,6 +93,16 @@ async def add_comments(event, gh, *args, session, **kwargs):
         logger.info(f"Responding to request for joke {comment}...")
         message = await comments.tell_joke(gh)
 
+    elif re.search(f"{helpers.botname} backport", comment, re.IGNORE_CASE):
+        logger.debug("Responding to request to backport a PR")
+        # TODO GBB: Check that the user is authorized to backport
+        if event.data["issue"]["pull_request"]["merged_at"]
+            # If the PR has been merged already, do the backport now
+            message = await handlers.backport_pr_from_comment(event, gh, *args, **kwargs)
+        else:
+            # Else register the PR to do backport when it's merged
+            message = await handlers.register_future_backport(pr_number)
+
     elif re.search(f"{helpers.botname} fix style", comment, re.IGNORECASE):
         logger.debug("Responding to request to fix style")
         message = await handlers.fix_style(event, gh, *args, **kwargs)
@@ -140,3 +150,7 @@ async def on_closed_pull_request(event, gh, *args, session, **kwargs):
     await handlers.close_pr_gitlab_branch(event, gh)
 
     await handlers.close_pr_mirror(event, gh)
+
+    if event.data["pull_request"]["merged"]:
+        if event.data["pull_request"]["number"] in handlers.backport_backlog:
+            await handlers.backport_pr_from_merge(event, gh, *args, **kwargs)
