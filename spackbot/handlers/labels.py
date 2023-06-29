@@ -68,7 +68,7 @@ label_patterns = {
     "external-packages": {"patch": r"[+-] +def determine_spec_details\("},
     "libraries": {"patch": r"[+-] +def libs\("},
     "headers": {"patch": r"[+-] +def headers\("},
-    "stand-alone-tests": {"patch": r"[+-] +def test\("},
+    "stand-alone-tests": {"patch": r"[+-] +def test[_]?.*\("},
     #
     # Core spack
     #
