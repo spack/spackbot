@@ -90,7 +90,7 @@ async def list_packages():
         ) as response:
             response = await response.json()
 
-    return [x.lower() for x in response]
+    return [x["name"].lower() for x in response]
 
 
 async def changed_packages(gh, pull_request):
