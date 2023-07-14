@@ -651,7 +651,6 @@ async def update_mirror_index(base_mirror_url):
                     "-d",
                     "buildcache",
                     "update-index",
-                    "--mirror-url",
                     f"{stack_mirror_url}",
                 ],
             )
