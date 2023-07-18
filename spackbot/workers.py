@@ -236,7 +236,7 @@ async def run_pipeline_task(event):
 
         detailed_status = result.get("detailed_status", {})
         if "details_path" in detailed_status:
-            url = f"{helpers.spack_gitlab_url}/{detailed_status['details_path']}"
+            url = urllib.parse.urljoin(helpers.spack_gitlab_url, detailed_status["details_path"])
             logger.info(f"Triggering pipeline on {branch}: {url}")
             msg = f"I've started that [pipeline]({url}) for you!"
             await gh.post(comments_url, {}, data={"body": msg})
