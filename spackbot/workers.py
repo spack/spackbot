@@ -215,6 +215,8 @@ async def run_pipeline_task(event):
                 f"{url}&variables[][key]=SPACK_PRUNE_UNTOUCHED&variables[][value]=False"
             )
             url = f"{url}&variables[][key]=SPACK_PRUNE_UP_TO_DATE&variables[][value]=False"
+            mirror_template = urllib.parse.quote_plus("single-src-pr-mirrors.yaml.in")
+            url = f"{url}&variables[][key]=PIPELINE_MIRROR_TEMPLATE&variables[][value]={mirror_template}"
 
             logger.info(
                 f"Deleting {helpers.pr_mirror_base_url}/{pr_mirror_key} for rebuild request by {sender}"
@@ -236,7 +238,9 @@ async def run_pipeline_task(event):
 
         detailed_status = result.get("detailed_status", {})
         if "details_path" in detailed_status:
-            url = urllib.parse.urljoin(helpers.spack_gitlab_url, detailed_status["details_path"])
+            url = urllib.parse.urljoin(
+                helpers.spack_gitlab_url, detailed_status["details_path"]
+            )
             logger.info(f"Triggering pipeline on {branch}: {url}")
             msg = f"I've started that [pipeline]({url}) for you!"
             await gh.post(comments_url, {}, data={"body": msg})

@@ -270,7 +270,7 @@ def s3_parse_url(url, default_bucket="spack-binaries-prs", default_prefix="dummy
         "prefix": default_prefix,
     }
 
-    if type(url) == str:
+    if isinstance(url, str):
         url = urlparse(url)
 
     if url.scheme == "s3":
