@@ -41,9 +41,9 @@ botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
 pr_mirror_base_url = os.environ.get(
     "PR_BINARIES_MIRROR_BASE_URL", "s3://spack-binaries-prs"
 )
-shared_pr_mirror_retire_after_days = os.environ.get(
+shared_pr_mirror_retire_after_days = int(os.environ.get(
     "SHARED_PR_MIRROR_RETIRE_AFTER_DAYS", 7
-)
+))
 pr_shared_mirror = "shared_pr_mirror"
 pr_expected_base = os.environ.get("PR_BINARIES_BASE_BRANCH", "develop")
 
