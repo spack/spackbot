@@ -107,7 +107,6 @@ label_patterns = {
     #
     # GitHub
     #
-    "travis": {"filename": r"^\.travis"},
     "actions": {"filename": r"^\.github/actions"},
     "workflow": {"filename": r"^\.github/workflows"},
     "git": {"filename": r"^\.gitignore"},
