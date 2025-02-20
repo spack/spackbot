@@ -1,9 +1,11 @@
-FROM python:3.7
+FROM python:3.9
 
+ADD https://raw.githubusercontent.com/spack/spack/refs/heads/develop/.github/workflows/requirements/style/requirements.txt /source/style-requirements.txt
 COPY workers/requirements.txt /source/requirements.txt
 
 RUN pip3 install --upgrade pip setuptools wheel && \
-    pip3 install -r /source/requirements.txt
+    pip3 install -r /source/requirements.txt && \
+    pip3 install -r /source/style-requirements.txt
 
 COPY workers/install_aws.sh /source/install_aws.sh
 

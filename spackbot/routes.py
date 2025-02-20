@@ -19,7 +19,6 @@ logger = helpers.get_logger(__name__)
 
 
 class SpackbotRouter(routing.Router):
-
     """
     Custom router to handle common interactions for spackbot
     """
