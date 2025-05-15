@@ -40,11 +40,11 @@ label_patterns = {
     # Package status
     #
     "new-package": {
-        "filename": r"^var/spack/repos/builtin/packages/[^/]+/package.py$",
+        "filename": r"^var/spack/repos/spack_repo/builtin/packages/[^/]+/package.py$",
         "status": r"^added$",
     },
     "update-package": {
-        "filename": r"^var/spack/repos/builtin/packages/[^/]+/package.py$",
+        "filename": r"^var/spack/repos/spack_repo/builtin/packages/[^/]+/package.py$",
         "status": [r"^modified$", r"^renamed$"],
     },
     #
@@ -152,7 +152,7 @@ async def add_labels(event, gh):
 
         # Add our own "package" attribute to the file, if it's a package
         match = re.match(
-            r"var/spack/repos/builtin/packages/([^/]+)/package.py$", filename
+            r"var/spack/repos/spack_repo/builtin/packages/([^/]+)/package.py$", filename
         )
         file["package"] = match.group(1) if match else ""
 

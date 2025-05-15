@@ -4,21 +4,20 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
-import aiohttp
 import contextlib
-import gidgethub
 import json
 import logging
 import os
 import re
 import tempfile
-
 from datetime import datetime
 from io import StringIO
-from sh import ErrorReturnCode
-from urllib.request import HTTPHandler, Request, build_opener
 from urllib.parse import urlparse
+from urllib.request import HTTPHandler, Request, build_opener
 
+import aiohttp
+import gidgethub
+from sh import ErrorReturnCode
 
 """Shared function helpers that can be used across routes"
 """
@@ -32,7 +31,7 @@ gitlab_spack_project_url = os.environ.get(
     "GITLAB_SPACK_PROJECT_URL", "https://gitlab.spack.io/api/v4/projects/2"
 )
 
-package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
+package_path = r"^var/spack/repos/spack_repo/builtin/packages/(\w[\w-]*)/package.py$"
 
 # Bot name can be modified in the environment
 botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
