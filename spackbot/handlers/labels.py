@@ -34,8 +34,8 @@ label_patterns = {
     # Package types
     #
     "intel": {"package": r"intel"},
-    "python": {"package": [r"^python$", r"^py-"]},
-    "R": {"package": [r"^r$", r"^r-"]},
+    "python": {"package": [r"^python$", r"^py_"]},
+    "R": {"package": [r"^r$", r"^r_"]},
     #
     # Package status
     #
