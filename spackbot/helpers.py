@@ -4,20 +4,21 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
+import aiohttp
 import contextlib
+import gidgethub
 import json
 import logging
 import os
 import re
 import tempfile
+
 from datetime import datetime
 from io import StringIO
-from urllib.parse import urlparse
-from urllib.request import HTTPHandler, Request, build_opener
-
-import aiohttp
-import gidgethub
 from sh import ErrorReturnCode
+from urllib.request import HTTPHandler, Request, build_opener
+from urllib.parse import urlparse
+
 
 """Shared function helpers that can be used across routes"
 """
@@ -281,3 +282,4 @@ def s3_parse_url(url, default_bucket="spack-binaries-prs", default_prefix="dummy
         )
 
     return parsed
+
