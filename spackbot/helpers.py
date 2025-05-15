@@ -32,7 +32,7 @@ gitlab_spack_project_url = os.environ.get(
     "GITLAB_SPACK_PROJECT_URL", "https://gitlab.spack.io/api/v4/projects/2"
 )
 
-package_path = r"^var/spack/repos/builtin/packages/(\w[\w-]*)/package.py$"
+package_path = r"^var/spack/repos/spack_repo/builtin/packages/(\w[\w-]*)/package.py$"
 
 # Bot name can be modified in the environment
 botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
