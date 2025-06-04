@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import collections
 import os
 import re
 
@@ -15,14 +16,16 @@ from gidgethub import BadRequest
 logger = helpers.get_logger(__name__)
 
 
-async def parse_maintainers_from_patch(gh, pull_request):
+async def parse_maintainers_info_from_patch(gh, pull_request):
     """
-    Get any new or removed maintainers from the patch data in the PR.
+    Get any new or removed maintainers from the patch data in the PR and
+    parent class(es).
 
     We parse this from the patch because running the spack from the PR as this
     bot is unsafe; the bot is privileged and we do not trust code from PRs.
 
     """
+    parents = {}
     maintainers = {}
     async for file in gh.getiter(pull_request["url"] + "/files"):
         filename = file["filename"]
@@ -38,7 +41,11 @@ async def parse_maintainers_from_patch(gh, pull_request):
             for m in file_maintainers:
                 maintainers.setdefault(pkg, set()).add(m.strip("'\""))
 
-    return maintainers
+        arrays = re.findall(r"class ([^\(]+)\(([^\(]+)\)", code)
+        for array in arrays:
+            parents[array[0]] = array[1].split(",")
+
+    return maintainers, parents
 
 
 async def find_maintainers(gh, packages, repository, pull_request, number):
@@ -55,8 +62,11 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
     without_maintainers = []
 
     # parse any added/removed maintainers from the PR. Do NOT run spack from the PR
-    patch_maintainers = await parse_maintainers_from_patch(gh, pull_request)
+    patch_maintainers, parents = await parse_maintainers_info_from_patch(
+        gh, pull_request
+    )
     logger.info(f"Maintainers from patch: {patch_maintainers}")
+    logger.info(f"Classes from patch: {parents}")
 
     all_maintainers = set()
     with helpers.temp_dir() as cwd:
@@ -68,6 +78,9 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
         # Get spack executable
         spack = sh.Command(f"{cwd}/spack/bin/spack")
 
+        # grab build system maintainers in case this is a new package
+        core_maintainers = parse_build_system_maintainers()
+
         for package in packages:
             logger.info(f"Package: {package}")
 
@@ -77,6 +90,11 @@ async def find_maintainers(gh, packages, repository, pull_request, number):
 
             # add in maintainers from the PR patch
             maintainers |= patch_maintainers.get(package, set())
+
+            # Add any maintainers from parent package(s) in case the package
+            # is just being added and develop doesn't know anything about it.
+            for p in parents[package]:
+                maintainers |= core_maintainers.get(package, set())
 
             logger.info("Maintainers: %s" % ", ".join(sorted(maintainers)))
 
@@ -279,3 +297,37 @@ async def add_reviewers(event, gh):
                 non_reviewers=" @".join(sorted(non_reviewers)),
             )
             await gh.post(pull_request["comments_url"], {}, data={"body": comment_body})
+
+
+def parse_build_system_maintainers():
+    classes = {}
+    maintainers = collections.defaultdict(set)
+
+    files = os.listdir(helpers.spack_build_systems_dir)
+    for filename in files:
+        if not filename.endswith(".py") and filename != "__init__.py":
+            continue
+
+        # Grab maintainers for the class(es) in the build system.
+        #
+        # Simplifying assumption: each class inherits from only one parent.
+        with open(os.path.join(helpers.spack_build_systems_dir, filename)) as f:
+            for ln in f:
+                match = re.search(r"^class ([^\(]+)\(([^\)]*)", ln)
+                if match:
+                    cls = match.group(1)
+                    parent = match.group(2)
+                    classes[cls] = parent
+                    inherited = maintainers.get(parent, set())
+                    if inherited:
+                        maintainers[cls] = inherited
+                else:
+                    match = re.search(r"maintainers\(([^\)]*)\)", ln)
+                    if match:
+                        users = [
+                            m.strip()
+                            for m in match.group(1).replace('"', "").split(",")
+                        ]
+                        maintainers[cls] = set(users)
+
+    return maintainers
