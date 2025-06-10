@@ -1,6 +1,6 @@
 # Install the App
 
-Whether you plan to run with docker-copmose or locally, you will need to install
+Whether you plan to run with docker-compose or locally, you will need to install
 the app to a repository to get the full functionality.
 So the next step is to install your app, ideally to your fork of spack. To do this,
 go back to the App in developer settings and click on it's public url, which
