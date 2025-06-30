@@ -16,6 +16,7 @@ import tempfile
 from datetime import datetime
 from io import StringIO
 from sh import ErrorReturnCode
+from typing import Dict
 from urllib.request import HTTPHandler, Request, build_opener
 from urllib.parse import urlparse
 
@@ -23,16 +24,34 @@ from urllib.parse import urlparse
 """Shared function helpers that can be used across routes"
 """
 
-spack_develop_url = "https://github.com/spack/spack"
-spack_gitlab_url = "https://gitlab.spack.io"
-spack_upstream = "git@github.com:spack/spack"
 
-# Spack has project ID 2
-gitlab_spack_project_url = os.environ.get(
-    "GITLAB_SPACK_PROJECT_URL", "https://gitlab.spack.io/api/v4/projects/2"
-)
+class SpackProject:
+    gitlab_url: str
+    gitlab_project_url: str
+    upstream_url: str
+    develop_url: str
 
-package_path = r"^var/spack/repos/spack_repo/builtin/packages/(\w[\w-]*)/package.py$"
+    def __init__(self, project: str, default_gitlab_project_id: int):
+        self.gitlab_url = os.environ.get("GITLAB_INSTANCE", "https://gitlab.spack.io")
+        project_clean = project.replace("-", "_").upper()
+        self.gitlab_project_url = os.environ.get(
+            f"GITLAB_{project_clean}_PROJECT_URL",
+            f"{self.gitlab_url}/api/v4/projects/{default_gitlab_project_id}",
+        )
+        self.upstream_url = f"git@github.com:spack/{project}"
+        self.develop_url = f"https://github.com/spack/{project}"
+
+
+def init_spack_projects() -> Dict[str, SpackProject]:
+    return {
+        "spack": SpackProject("spack", 2),
+        "spack-packages": SpackProject("spack-packages", 57),
+    }
+
+
+PROJECTS: Dict[str, SpackProject] = init_spack_projects()
+
+package_path = r"^repos/spack_repo/builtin/packages/(\w[\w-]*)/package.py$"
 
 # Bot name can be modified in the environment
 botname = os.environ.get("SPACKBOT_NAME", "@spackbot")
@@ -61,7 +80,7 @@ def get_logger(name):
     global __spackbot_log_level
 
     if not __spackbot_log_level:
-        __spackbot_log_level = os.environ.get("SPACKBOT_LOG_LEVEL", "INFO").upper()
+        __spackbot_log_level = os.environ.get("SPACKBOT_LOG_LEVEL", "DEBUG").upper()
 
         if __spackbot_log_level not in __supported_log_levels:
             # Logging not yet configured, so just print this warning

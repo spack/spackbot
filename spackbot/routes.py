@@ -61,14 +61,6 @@ async def add_style_comments(event, gh, *args, session, **kwargs):
         await handlers.style_comment(event, gh)
 
 
-@router.register("pull_request", action="opened")
-async def on_pull_request(event, gh, *args, session, **kwargs):
-    """
-    Respond to the pull request being opened
-    """
-    await handlers.add_reviewers(event, gh)
-
-
 @router.register("issue_comment", action="created")
 async def add_comments(event, gh, *args, session, **kwargs):
     """
@@ -80,6 +72,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
 
     # Respond with appropriate messages
     comment = event.data["comment"]["body"]
+    event_project = event.data["repository"]["name"]
 
     # @spackbot hello
     message = None
@@ -101,34 +94,28 @@ async def add_comments(event, gh, *args, session, **kwargs):
         logger.debug("Responding to request for help commands.")
         message = comments.commands_message
 
-    # @spackbot maintainers or @spackbot request review
-    elif re.search(
-        f"{helpers.botname} (maintainers|request review)", comment, re.IGNORECASE
-    ):
-        logger.debug("Responding to request to assign maintainers for review.")
-        await handlers.add_reviewers(event, gh)
-
     # @spackbot run pipeline | @spackbot re-run pipeline
     elif re.search(f"{helpers.botname} (re-?)?run pipeline", comment, re.IGNORECASE):
-        logger.info("Responding to request to re-run pipeline...")
-        await handlers.run_pipeline(event, gh, **kwargs)
+        if event_project == "spack-packages":
+            logger.info("Responding to request to re-run pipeline...")
+            await handlers.run_pipeline(event, gh, **kwargs)
+        else:
+            message = (
+                f'Ignoring request, "{event_project}" does not have pipelines enabled.'
+            )
 
     # @spackbot rebuild everything
     elif re.search(f"{helpers.botname} rebuild everything", comment, re.IGNORECASE):
-        logger.info("Responding to request to rebuild everthing...")
-        await handlers.run_pipeline_rebuild_all(event, gh, **kwargs)
+        if event_project == "spack-packages":
+            logger.info("Responding to request to rebuild everthing...")
+            await handlers.run_pipeline_rebuild_all(event, gh, **kwargs)
+        else:
+            message = (
+                f'Ignoring request, "{event_project}" does not have pipelines enabled.'
+            )
 
     if message:
         await gh.post(event.data["issue"]["comments_url"], {}, data={"body": message})
-
-
-@router.register("pull_request", action="opened")
-@router.register("pull_request", action="synchronize")
-async def label_pull_requests(event, gh, *args, session, **kwargs):
-    """
-    Add labels to PRs based on which files were modified.
-    """
-    await handlers.add_labels(event, gh)
 
 
 @router.register("pull_request", action="closed")
@@ -136,6 +123,10 @@ async def on_closed_pull_request(event, gh, *args, session, **kwargs):
     """
     Respond to the pull request closed
     """
+    event_project = event.data["repository"]["name"]
+    if not event_project == "spack-packages":
+        return
+
     await handlers.close_pr_gitlab_branch(event, gh)
 
     await handlers.close_pr_mirror(event, gh)
