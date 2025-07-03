@@ -14,6 +14,6 @@ docker push ghcr.io/${gh_user}/spackbot:${image_tag}
 docker push ghcr.io/${gh_user}/spackbot-workers:${image_tag}
 
 # Rollout with the new containers
-kubectl rollout restart -n spack deployments/spackbotdev-spack-io
-kubectl rollout restart -n spack deployments/spackbotdev-workers
-kubectl rollout restart -n spack deployments/spackbotdev-lworkers
+kubectl -n spack rollout restart deployment spackbotdev-spack-io
+kubectl -n spack rollout restart deployment spackbotdev-workers
+kubectl -n spack rollout restart deployment spackbotdev-lworkers
