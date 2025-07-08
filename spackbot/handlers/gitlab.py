@@ -65,7 +65,8 @@ async def close_pr_gitlab_branch(event, gh):
     pr_branch = payload["pull_request"]["head"]["ref"]
     pr_branch_name = f"pr{pr_number}_{pr_branch}"
 
-    url = helpers.gitlab_spack_project_url
+    event_project = payload["repository"]["name"]
+    url = helpers.PROJECT[event_project].gitlab_project_url
     url = f"{url}/repository/branches/{pr_branch_name}"
 
     GITLAB_TOKEN = os.environ.get("GITLAB_TOKEN")

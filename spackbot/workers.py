@@ -56,7 +56,9 @@ def is_up_to_date(output):
     return "nothing to commit" in output
 
 
-async def check_gitlab_has_latest(branch_name, pr_head_sha, gh, comments_url):
+async def check_gitlab_has_latest(
+    gitlab_project_url, branch_name, pr_head_sha, gh, comments_url
+):
     """
     Given the name of the branch supposedly pushed to gitlab, check if it
     is the latest revision found on github.  If gitlab doesn't have the
@@ -73,7 +75,7 @@ async def check_gitlab_has_latest(branch_name, pr_head_sha, gh, comments_url):
     """
     # Get the commit for the PR branch from GitLab to see what's been pushed there
     headers = {"PRIVATE-TOKEN": GITLAB_TOKEN}
-    commit_url = f"{helpers.gitlab_spack_project_url}/repository/commits/{branch_name}"
+    commit_url = f"{gitlab_project_url}/repository/commits/{branch_name}"
     gitlab_commit = await helpers.get(commit_url, headers)
 
     error_msg = comments.cannot_run_pipeline_comment
@@ -146,6 +148,7 @@ async def run_pipeline_task(event):
     job = get_current_job()
     token = job.meta["token"]
     rebuild_everything = job.meta.get("rebuild_everything")
+    event_project = event.data["repository"]["name"]
 
     async with aiohttp.ClientSession() as session:
         gh = gh_aiohttp.GitHubAPI(session, REQUESTER, oauth_token=token)
@@ -194,10 +197,16 @@ async def run_pipeline_task(event):
         # If gitlab doesn't have the latest PR head sha from GitHub, we can't run the
         # pipeline.
         head_sha = pr["head"]["sha"]
-        if not await check_gitlab_has_latest(branch, head_sha, gh, comments_url):
+        if not await check_gitlab_has_latest(
+            helpers.PROJECTS[event_project].gitlab_project_url,
+            branch,
+            head_sha,
+            gh,
+            comments_url,
+        ):
             return
 
-        url = f"{helpers.gitlab_spack_project_url}/pipeline?ref={branch}"
+        url = f"{helpers.PROJECTS[event_project].gitlab_project_url}/pipeline?ref={branch}"
 
         if rebuild_everything:
             # Rebuild everything is accomplished by telling spack pipeline generation
@@ -239,7 +248,8 @@ async def run_pipeline_task(event):
         detailed_status = result.get("detailed_status", {})
         if "details_path" in detailed_status:
             url = urllib.parse.urljoin(
-                helpers.spack_gitlab_url, detailed_status["details_path"]
+                helpers.PROJECTS[event_project].gitlab_url,
+                detailed_status["details_path"],
             )
             logger.info(f"Triggering pipeline on {branch}: {url}")
             msg = f"I've started that [pipeline]({url}) for you!"
@@ -305,30 +315,45 @@ async def fix_style_task(event):
         # We need to use the git url with ssh
         remote_branch = pr["head"]["ref"]
         local_branch = "spackbot-style-check-working-branch"
-        full_name = pr["head"]["repo"]["full_name"]
-        fork_url = f"git@github.com:{full_name}.git"
+        repo_name = pr["head"]["repo"]["name"]
+        ssh_url = pr["head"]["repo"]["ssh_url"]
+        fork_url = pr["head"]["repo"]["ssh_url"]
 
         logger.info(
             f"fix_style_task, user = {user}, email = {email}, fork = {fork_url}, branch = {remote_branch}\n"
         )
 
+        # Style tool is run from the root dir expressed as {0}
+        upstream_url = helpers.PROJECTS[repo_name].upstream_url
+        if repo_name == "spack":
+            style_tool = (
+                "bin/spack",
+                ["--color", "never", "style", "--fix", "--root", "{0}"],
+            )
+        elif repo_name == "spack-packages":
+            # Packages calls black directly per changed file
+            style_tool = ("black", [])
+
         # At this point, we can clone the repository and make the change
         with helpers.temp_dir() as cwd:
             # Clone a fresh spack develop to use for spack style
-            git.clone(helpers.spack_upstream, "spack-develop")
+            git.clone(upstream_url, "develop")
 
-            spack = sh.Command(f"{cwd}/spack-develop/bin/spack")
+            if os.path.exists(f"{cwd}/develop/{style_tool[0]}"):
+                fix_style_command = sh.Command(f"{cwd}/develop/{style_tool[0]}")
+            else:
+                fix_style_command = sh.Command(f"{style_tool[0]}")
 
             # clone the develop repository to another folder for our PR
-            git.clone("spack-develop", "spack")
+            git.clone("develop", "fork")
 
-            os.chdir("spack")
+            os.chdir("fork")
 
             git.config("user.name", user)
             git.config("user.email", email)
 
             # This will authenticate the push with the added ssh credentials
-            git.remote("add", "upstream", helpers.spack_upstream)
+            git.remote("add", "upstream", ssh_url)
             git.remote("set-url", "origin", fork_url)
 
             # we're on upstream/develop. Fetch just the PR branch
@@ -342,11 +367,11 @@ async def fix_style_task(event):
             # Run the style check and save the message for the user
             check_dir = os.getcwd()
             res, err = helpers.run_command(
-                spack, ["--color", "never", "style", "--fix", "--root", check_dir]
+                fix_style_command, [arg.format(check_dir) for arg in style_tool[1]]
             )
-            logger.debug("spack style [output]")
+            logger.debug("style [output]")
             logger.debug(res)
-            logger.debug("spack style [error]")
+            logger.debug("style [error]")
             logger.debug(err)
 
             message = comments.get_style_message(res)
@@ -530,7 +555,7 @@ async def prune_mirror_duplicates(shared_pr_mirror_url, publish_mirror_url):
             helpers.pr_expected_base,
             "--depth",
             1,
-            helpers.spack_upstream,
+            helpers.PROJECTS["spack-packages"].upstream_url,
             "spack",
         )
 
@@ -641,7 +666,7 @@ async def update_mirror_index(base_mirror_url):
             helpers.pr_expected_base,
             "--depth",
             1,
-            helpers.spack_upstream,
+            helpers.PROJECTS["spack-packages"].upstream_url,
             "spack",
         )
         spack = sh.Command(f"{cwd}/spack/bin/spack")

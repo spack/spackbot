@@ -50,7 +50,8 @@ async def close_pr_mirror(event, gh):
         "pr_branch": pr_branch,
     }
 
-    if is_merged and base_branch == pr_expected_base:
+    # PR Graduation Mirror is disabled
+    if False and is_merged and base_branch == pr_expected_base:
         logger.info(
             f"PR {pr_number}/{pr_branch} merged to develop, graduating binaries"
         )

@@ -4,4 +4,4 @@ gidgethub
 python_dotenv
 rq
 sh
-aws
+awscli
