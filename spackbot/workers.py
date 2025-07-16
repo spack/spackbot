@@ -348,6 +348,10 @@ async def fix_style_task(event):
             git.clone("develop", "fork")
 
             os.chdir("fork")
+            if repo_name == "spack-packages":
+                # We need to clone spack in order to use the style script
+                spack_upstream_url = helpers.PROJECTS["spack"].upstream_url
+                git.clone("--depth", "1", spack_upstream_url, "spack-core")
 
             git.config("user.name", user)
             git.config("user.email", email)
