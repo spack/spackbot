@@ -332,7 +332,7 @@ async def fix_style_task(event):
             )
         elif repo_name == "spack-packages":
             # Packages calls black directly per changed file
-            style_tool = ("black", [])
+            style_tool = (".ci/style_check.sh", ["--fix"])
 
         # At this point, we can clone the repository and make the change
         with helpers.temp_dir() as cwd:
