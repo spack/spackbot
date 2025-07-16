@@ -332,7 +332,7 @@ async def fix_style_task(event):
             )
         elif repo_name == "spack-packages":
             # Packages calls black directly per changed file
-            style_tool = ("black", [])
+            style_tool = (".ci/style_check.sh", ["--fix"])
 
         # At this point, we can clone the repository and make the change
         with helpers.temp_dir() as cwd:
@@ -348,6 +348,10 @@ async def fix_style_task(event):
             git.clone("develop", "fork")
 
             os.chdir("fork")
+            if repo_name == "spack-packages":
+                # We need to clone spack in order to use the style script
+                spack_upstream_url = helpers.PROJECTS["spack"].upstream_url
+                git.clone("--depth", "1", spack_upstream_url, "spack-core")
 
             git.config("user.name", user)
             git.config("user.email", email)
