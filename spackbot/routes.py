@@ -96,7 +96,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
 
     # @spackbot run pipeline | @spackbot re-run pipeline
     elif re.search(f"{helpers.botname} (re-?)?run pipeline", comment, re.IGNORECASE):
-        if event_project == "spack-packages":
+        if event_project == "spack-packages" or event_project == "spack":
             logger.info("Responding to request to re-run pipeline...")
             await handlers.run_pipeline(event, gh, **kwargs)
         else:
@@ -106,7 +106,7 @@ async def add_comments(event, gh, *args, session, **kwargs):
 
     # @spackbot rebuild everything
     elif re.search(f"{helpers.botname} rebuild everything", comment, re.IGNORECASE):
-        if event_project == "spack-packages":
+        if event_project == "spack-packages" or event_project == "spack":
             logger.info("Responding to request to rebuild everthing...")
             await handlers.run_pipeline_rebuild_all(event, gh, **kwargs)
         else:
@@ -124,7 +124,7 @@ async def on_closed_pull_request(event, gh, *args, session, **kwargs):
     Respond to the pull request closed
     """
     event_project = event.data["repository"]["name"]
-    if not event_project == "spack-packages":
+    if not (event_project == "spack-packages" or event_project == "spack"):
         return
 
     await handlers.close_pr_gitlab_branch(event, gh)

@@ -37,8 +37,9 @@ async def close_pr_mirror(event, gh):
     is_merged = payload["pull_request"]["merged"]
     pr_number = payload["number"]
     pr_branch = payload["pull_request"]["head"]["ref"]
+    event_project = event.data["repository"]["name"]
 
-    pr_mirror_url = f"{pr_mirror_base_url}/pr{pr_number}_{pr_branch}"
+    pr_mirror_url = f"{pr_mirror_base_url}/{event_project}/pr{pr_number}_{pr_branch}"
     shared_pr_mirror_url = f"{pr_mirror_base_url}/{pr_shared_mirror}"
 
     # Get task queue info
