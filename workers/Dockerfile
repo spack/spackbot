@@ -1,7 +1,7 @@
 FROM python:3.14
 
-ADD https://raw.githubusercontent.com/spack/spack/refs/heads/develop/.github/workflows/requirements/style/requirements.txt /source/style-requirements.txt
 COPY workers/requirements.txt /source/requirements.txt
+COPY workers/style-requirements.txt /source/style-requirements.txt
 
 RUN pip3 install --upgrade pip setuptools wheel && \
     pip3 install -r /source/requirements.txt && \

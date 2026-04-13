@@ -326,6 +326,12 @@ async def fix_style_task(event):
         # Style tool is run from the root dir expressed as {0}
         upstream_url = helpers.PROJECTS[repo_name].upstream_url
         if repo_name == "spack":
+            await gh.post(
+                event.data["issue"]["comments_url"], {}, data={"body": "Spackbot style is disabled while transitioning to Ruff"}
+            )
+            logger.info("Skipping style for core")
+            return
+
             style_tool = (
                 "bin/spack",
                 ["--color", "never", "style", "--fix", "--root", "{0}"],
